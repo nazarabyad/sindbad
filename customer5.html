@@ -1,0 +1,238 @@
+<!doctype html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="theme-color" content="#12263A">
+<title>سندباد</title>
+<link href="https://fonts.googleapis.com/css2?family=Tajawal:wght@400;700;800&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.css">
+<style>
+:root{--ink:#12263A;--sea:#0E7C86;--foam:#EAF2F3;--sun:#F2A93B;--card:#fff;--mut:#5d6f7d;--bad:#b3261e}
+*{box-sizing:border-box;margin:0}
+body{font-family:Tajawal,system-ui,sans-serif;background:var(--foam);color:var(--ink);min-height:100vh}
+header{background:var(--ink);color:#fff;padding:22px 18px 30px;border-radius:0 0 28px 28px}
+header h1{font-size:30px;font-weight:800;letter-spacing:0}
+header p{color:#b9cad6;font-size:14px;margin-top:2px}
+main{padding:16px;margin-top:-16px;max-width:520px;margin-inline:auto}
+.card{background:var(--card);border-radius:18px;padding:16px;margin-bottom:14px;box-shadow:0 2px 10px rgba(18,38,58,.08)}
+h2{font-size:16px;margin-bottom:10px}
+label{display:block;font-size:14px;color:var(--mut);margin:10px 0 4px}
+input{width:100%;padding:13px;border:1.5px solid #cfdbe0;border-radius:12px;font:inherit;background:#fff}
+input:focus{outline:3px solid rgba(14,124,134,.35);border-color:var(--sea)}
+button{font:inherit;cursor:pointer;border:0;border-radius:12px;padding:14px;width:100%;font-weight:700}
+.go{background:var(--sun);color:var(--ink);font-size:17px;margin-top:14px}
+.go:disabled{opacity:.5}
+.alt{background:var(--foam);color:var(--sea);margin-top:8px}
+.types{display:grid;grid-template-columns:repeat(3,1fr);gap:8px}
+.t{background:var(--foam);border:2px solid transparent;color:var(--ink);padding:14px 4px;font-size:15px}
+.t span{display:block;font-size:30px;margin-bottom:4px}
+.t.on{border-color:var(--sea);background:#fff;box-shadow:0 0 0 3px rgba(14,124,134,.18)}
+.loc{font-size:14px;color:var(--mut);margin-top:8px}
+.loc.ok{color:var(--sea);font-weight:700}
+.st{text-align:center}
+.st .big{font-size:20px;font-weight:800;margin:6px 0}
+.pulse{width:14px;height:14px;border-radius:50%;background:var(--sun);display:inline-block;animation:p 1.2s infinite}
+@keyframes p{50%{transform:scale(1.6);opacity:.4}}
+@media (prefers-reduced-motion:reduce){.pulse{animation:none}}
+.err{color:var(--bad);font-size:14px;margin-top:8px}
+.hide{display:none}
+#map{height:260px;border-radius:12px;margin-top:10px;z-index:0}
+#res button{background:#fff;border:1px solid #cfdbe0;color:var(--ink);text-align:right;margin-top:6px;font-weight:400;padding:10px;font-size:14px}
+.chip{width:auto;margin:0;padding:8px 14px;font-size:14px}
+.price{font-size:19px;font-weight:800;color:var(--sea);text-align:center;margin-top:12px}
+a.call{display:block;background:var(--sea);color:#fff;text-decoration:none;border-radius:12px;padding:14px;font-weight:700;margin-top:10px}
+</style>
+</head>
+<body>
+<header><h1>سندباد</h1><p>مشوارك يصلك أقرب من ما تتخيل</p></header>
+<main>
+  <section id="login" class="card hide">
+    <h2>أهلاً بيك، عرّفنا بيك</h2>
+    <label for="nm">الاسم</label><input id="nm" autocomplete="name">
+    <label for="ph">رقم التلفون</label><input id="ph" type="tel" inputmode="tel" autocomplete="tel" placeholder="09XXXXXXXX">
+    <button class="go" id="enter">دخول</button>
+    <div class="err" id="e1"></div>
+  </section>
+
+  <section id="order" class="hide">
+    <div class="card">
+      <h2>اختار المركبة</h2>
+      <div class="types">
+        <button class="t on" data-t="car"><span>🚗</span>عربية</button>
+        <button class="t" data-t="rickshaw"><span>🛺</span>ركشة</button>
+        <button class="t" data-t="bike"><span>🏍️</span>موتر</button>
+      </div>
+    </div>
+    <div class="card">
+      <h2>موقعك</h2>
+      <button class="alt" id="gps" style="margin-top:0">حدد موقعي الحالي</button>
+      <div class="loc" id="loc">لسه ما حددنا موقعك</div>
+      <div id="map" class="hide"></div>
+      <div class="loc" id="hint">بعد تحديد موقعك ابحث بالاسم أو اضغط على الخريطة</div>
+      <label for="dest">ابحث عن الوجهة بالاسم</label>
+      <div style="display:flex;gap:8px"><input id="dest" placeholder="مثلاً: سوق أمدرمان"><button class="alt" id="sr" style="width:auto;margin:0;padding:0 18px">بحث</button></div>
+      <div id="res"></div>
+      <div style="display:flex;gap:6px;flex-wrap:wrap;margin-top:8px"><button class="alt chip" data-c="hood">الأحياء</button><button class="alt chip" data-c="food">المطاعم</button><button class="alt chip" data-c="health">المستشفيات</button><button class="alt chip" data-c="market">الأسواق</button><button class="alt chip" data-c="other">أماكن تانية</button></div>
+      <div class="price" id="price"></div>
+      <button class="go" id="send" disabled>اطلب المشوار</button>
+      <div class="err" id="e2"></div>
+    </div>
+  </section>
+
+  <section id="status" class="card st hide">
+    <span class="pulse" id="pl"></span>
+    <div class="big" id="sm"></div>
+    <div id="sd" style="color:var(--mut)"></div>
+    <div id="call"></div>
+    <button class="alt" id="cancel">إلغاء الطلب</button>
+    <button class="alt hide" id="again">طلب جديد</button>
+  </section>
+</main>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.js"></script>
+<script type="module">
+import {initializeApp} from "https://www.gstatic.com/firebasejs/10.14.1/firebase-app.js";
+import {getAuth,signInAnonymously} from "https://www.gstatic.com/firebasejs/10.14.1/firebase-auth.js";
+import {getFirestore,collection,addDoc,getDoc,getDocs,doc,updateDoc,onSnapshot,serverTimestamp} from "https://www.gstatic.com/firebasejs/10.14.1/firebase-firestore.js";
+
+const app=initializeApp({
+  apiKey:"AIzaSyBmZP_ZaIOUiZeexQmtPlYVJENJYIk3iME",
+  authDomain:"sindbad-13df0.firebaseapp.com",
+  projectId:"sindbad-13df0",
+  storageBucket:"sindbad-13df0.firebasestorage.app",
+  messagingSenderId:"1088403371161",
+  appId:"1:1088403371161:web:79fc720b3287ab77627408"
+});
+const auth=getAuth(app),db=getFirestore(app);
+const $=id=>document.getElementById(id);
+const show=(...ids)=>["login","order","status"].forEach(i=>$(i).classList.toggle("hide",!ids.includes(i)));
+const ls={get:k=>{try{return localStorage.getItem(k)}catch(e){return null}},set:(k,v)=>{try{localStorage.setItem(k,v)}catch(e){}},del:k=>{try{localStorage.removeItem(k)}catch(e){}}};
+let user=null,type="car",pos=null,unsub=null,destPt=null,map=null,mk=null,meMk=null,quote=null,cfg={},places=[];
+
+async function start(){
+  try{await signInAnonymously(auth)}catch(e){$("e1").textContent="تعذر الاتصال، تأكد من الإنترنت وفعّل Anonymous في Authentication";}
+  await loadCfg();
+  const n=ls.get("sb_name"),p=ls.get("sb_phone");
+  if(n&&p){user={name:n,phone:p};const r=ls.get("sb_ride");r?watch(r):show("order")}else show("login");
+}
+
+$("enter").onclick=()=>{
+  const name=$("nm").value.trim(),phone=$("ph").value.trim();
+  if(name.length<2||phone.replace(/\D/g,"").length<9){$("e1").textContent="اكتب اسمك ورقم تلفونك صاح";return}
+  ls.set("sb_name",name);ls.set("sb_phone",phone);user={name,phone};show("order");
+};
+
+document.querySelectorAll(".t").forEach(b=>b.onclick=()=>{
+  type=b.dataset.t;document.querySelectorAll(".t").forEach(x=>x.classList.toggle("on",x===b));calc();
+});
+
+$("gps").onclick=()=>{
+  $("loc").className="loc";$("loc").textContent="بنحدد موقعك...";
+  if(!navigator.geolocation){$("loc").textContent="المتصفح ما بدعم تحديد الموقع";return}
+  navigator.geolocation.getCurrentPosition(p=>{
+    pos={lat:p.coords.latitude,lng:p.coords.longitude};
+    $("loc").className="loc ok";$("loc").textContent="تم تحديد موقعك ✓";initMap();calc();
+  },()=>{$("loc").textContent="ما قدرنا نحدد الموقع. فعّل الـ GPS واسمح للمتصفح بالوصول للموقع"},{enableHighAccuracy:true,timeout:15000});
+};
+
+$("send").onclick=async()=>{
+  const dest=$("dest").value.trim()||"وجهة على الخريطة";
+  if(!pos||!destPt||!quote){$("e2").textContent="حدد موقعك ووجهتك على الخريطة";return}
+  $("send").disabled=true;$("e2").textContent="";
+  try{
+    const r=await addDoc(collection(db,"rides"),{
+      customerName:user.name,customerPhone:user.phone,vehicleType:type,
+      lat:pos.lat,lng:pos.lng,destination:dest,destLat:destPt.lat,destLng:destPt.lng,distanceKm:quote.distanceKm,price:quote.price,status:"pending",createdAt:serverTimestamp()
+    });
+    ls.set("sb_ride",r.id);watch(r.id);
+  }catch(e){$("e2").textContent="فشل إرسال الطلب، حاول تاني";$("send").disabled=false}
+};
+
+function watch(id){
+  show("status");$("again").classList.add("hide");$("cancel").classList.remove("hide");
+  if(unsub)unsub();
+  unsub=onSnapshot(doc(db,"rides",id),s=>{
+    if(!s.exists()){reset();return}
+    const d=s.data(),m={pending:["بنبحث ليك عن أقرب سواق","الطلب وصل للسواقين القريبين منك"],
+      accepted:["السواق قبل طلبك ✓",(d.driverName||"السواق")+" في الطريق ليك"],
+      cancelled:["اتلغى الطلب",""],done:["وصلت بالسلامة",""]}[d.status]||["",""];
+    $("sm").textContent=m[0];$("sd").textContent=m[1]+(d.price?" • "+Number(d.price).toLocaleString("en-US")+" جنيه":"");
+    $("pl").classList.toggle("hide",d.status!=="pending");
+    $("call").innerHTML=d.status==="accepted"&&d.driverPhone?`<a class="call" href="tel:${encodeURIComponent(d.driverPhone)}">اتصل بالسواق</a>`:"";
+    const end=d.status==="cancelled"||d.status==="done";
+    $("cancel").classList.toggle("hide",end);$("again").classList.toggle("hide",!end);
+  });
+}
+$("cancel").onclick=()=>{const r=ls.get("sb_ride");if(r)updateDoc(doc(db,"rides",r),{status:"cancelled"})};
+$("again").onclick=reset;
+function reset(){if(unsub)unsub();ls.del("sb_ride");pos=null;destPt=null;quote=null;if(mk&&map){map.removeLayer(mk);mk=null}$("price").textContent="";$("res").innerHTML="";$("send").disabled=true;$("dest").value="";$("loc").className="loc";$("loc").textContent="لسه ما حددنا موقعك";show("order")}
+
+const DEF={car:6000,rickshaw:4000,bike:2000},KEY={car:"priceKmCar",rickshaw:"priceKmRickshaw",bike:"priceKmBike"};
+async function loadCfg(){
+  try{const x=await getDoc(doc(db,"settings","pricing"));cfg=x.exists()?x.data():{}}catch(e){cfg={}}
+  try{const q=await getDocs(collection(db,"places"));places=q.docs.map(d=>d.data()).filter(p=>p.name&&isFinite(p.lat)&&isFinite(p.lng))}catch(e){places=[]}
+}
+const AT={c:[17.7022,33.9864],b:[[17.60,33.88],[17.80,34.10]]};
+function km(a,b,c,d){const r=x=>x*Math.PI/180,h=Math.sin(r(c-a)/2)**2+Math.cos(r(a))*Math.cos(r(c))*Math.sin(r(d-b)/2)**2;return 12742*Math.asin(Math.sqrt(h))}
+function calc(){
+  if(!pos||!destPt){quote=null;$("price").textContent="";$("send").disabled=true;return}
+  const d=Math.max(0.1,km(pos.lat,pos.lng,destPt.lat,destPt.lng)*(Number(cfg.roadFactor)||1.3));
+  const rate=Number(cfg[KEY[type]])||DEF[type];
+  const p=Math.max(500,Math.round(Math.max(d*rate,Number(cfg.minFare)||0)/500)*500);
+  quote={distanceKm:Math.round(d*10)/10,price:p};
+  $("price").textContent="السعر التقديري: "+p.toLocaleString("en-US")+" جنيه ("+quote.distanceKm+" كم)";
+  $("send").disabled=false;
+}
+function initMap(){
+  $("map").classList.remove("hide");
+  const inAt=pos.lat>=AT.b[0][0]&&pos.lat<=AT.b[1][0]&&pos.lng>=AT.b[0][1]&&pos.lng<=AT.b[1][1];
+  $("hint").textContent=inAt?"ابحث بالاسم أو اختار من الأقسام أو اضغط على الخريطة":"موقعك خارج عطبرة. الخدمة حالياً داخل عطبرة فقط.";
+  if(!window.L){$("hint").textContent="تعذر تحميل الخريطة، تأكد من الإنترنت";return}
+  if(!map){
+    map=L.map("map",{maxBounds:AT.b,minZoom:11}).setView(inAt?[pos.lat,pos.lng]:AT.c,14);
+    L.tileLayer("https://tile.openstreetmap.org/{z}/{x}/{y}.png",{maxZoom:19,attribution:"© OpenStreetMap"}).addTo(map);
+    map.on("click",e=>{destPt={lat:e.latlng.lat,lng:e.latlng.lng};if(mk)mk.setLatLng(e.latlng);else mk=L.marker(e.latlng).addTo(map);calc()});
+  }else map.setView(inAt?[pos.lat,pos.lng]:AT.c,14);
+  if(meMk)meMk.setLatLng([pos.lat,pos.lng]);else meMk=L.circleMarker([pos.lat,pos.lng],{radius:8,color:"#0E7C86",fillOpacity:.9}).addTo(map);
+  setTimeout(()=>map.invalidateSize(),150);
+}
+
+function esc(t){return String(t||"").replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]))}
+function setDest(lat,lng,name){
+  destPt={lat,lng};
+  if(map){const ll=[lat,lng];if(mk)mk.setLatLng(ll);else mk=L.marker(ll).addTo(map);map.setView(ll,15)}
+  if(name)$("dest").value=name;
+  $("res").innerHTML="";calc();
+}
+const CAT={hood:"حي",food:"مطعم",health:"صحة",market:"سوق",other:"مكان"};
+const item=p=>({name:p.name,lat:p.lat,lng:p.lng,sub:CAT[p.cat]||""});
+function showList(items){
+  $("res").innerHTML=items.map((x,i)=>`<button data-i="${i}">${esc(x.name)} <span class="loc">${esc(x.sub)}</span></button>`).join("");
+  document.querySelectorAll("#res button").forEach(b=>b.onclick=()=>{const x=items[b.dataset.i];setDest(x.lat,x.lng,x.name)});
+}
+document.querySelectorAll(".chip").forEach(b=>b.onclick=()=>{
+  const l=places.filter(p=>p.cat===b.dataset.c).map(item);
+  if(l.length)showList(l);else $("res").innerHTML='<div class="loc">ما في أماكن مضافة في القسم ده لسه</div>';
+});
+async function search(){
+  const q=$("dest").value.trim();
+  if(q.length<2){$("res").innerHTML="";return}
+  const local=places.filter(p=>p.name.includes(q)).map(item);
+  if(local.length)showList(local);else $("res").innerHTML='<div class="loc">جاري البحث...</div>';
+  let extra=[];
+  try{
+    const u="https://nominatim.openstreetmap.org/search?format=jsonv2&limit=6&bounded=1&accept-language=ar&q="+encodeURIComponent(q)+"&viewbox=33.88,17.80,34.10,17.60";
+    const r=await (await fetch(u)).json();
+    extra=r.map(x=>({name:x.name||x.display_name.split("،")[0],lat:parseFloat(x.lat),lng:parseFloat(x.lon),sub:"خريطة"}));
+  }catch(e){}
+  const all=local.concat(extra);
+  if(all.length)showList(all);else $("res").innerHTML='<div class="loc">ما لقينا المكان. اضغط على الخريطة لتحديد وجهتك.</div>';
+}
+$("sr").onclick=search;
+$("dest").addEventListener("keydown",e=>{if(e.key==="Enter")search()});
+
+start();
+</script>
+</body>
+</html>
