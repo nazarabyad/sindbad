@@ -1,12 +1,16 @@
 {
+  "id": "/sindbad/",
   "name": "سندباد - SINDBAD",
-  "short_name": "SINDBAD",
-  "description": "تطبيق سندباد للنقل - مثل اوبر، سريع وآمن",
-  "start_url": "/",
+  "short_name": "سندباد",
+  "description": "تطبيق سندباد للنقل - مثل اوبر سريع وآمن - أبو حمد",
+  "start_url": "/sindbad/",
+  "scope": "/sindbad/",
   "display": "standalone",
-  "orientation": "portrait",
-  "background_color": "#0a1931",
-  "theme_color": "#0a1931",
+  "orientation": "any",
+  "background_color": "#12263A",
+  "theme_color": "#12263A",
+  "dir": "rtl",
+  "lang": "ar",
   "icons": [
     {
       "src": "icon-192.png",
@@ -19,6 +23,15 @@
       "sizes": "512x512",
       "type": "image/png",
       "purpose": "any maskable"
+    }
+  ],
+  "screenshots": [
+    {
+      "src": "icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "form_factor": "wide",
+      "label": "سندباد"
     }
   ]
 }
