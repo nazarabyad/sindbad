@@ -59,7 +59,8 @@ select{width:100%;padding:12px;border:1.5px solid #cfdbe0;border-radius:12px;fon
     <div id="plc" class="hide">
       <div class="card"><b>استيراد من الخريطة العامة</b>
         <div class="mut">يجلب الأحياء والمطاعم والمستشفيات والأسواق وغيرها المسجلة في أبو حمد، وتختار شنو تحفظ.</div>
-        <button class="go" id="imp">جلب الأماكن من الخريطة</button><div id="il" style="margin-top:8px"></div>
+        <button class="go" id="rep">استبدال كل الأماكن بأماكن أبو حمد (بضغطة)</button>
+        <button class="ok" id="imp">جلب الأماكن من الخريطة</button><div id="il" style="margin-top:8px"></div>
         <button class="no" id="clr">مسح الأماكن المستوردة القديمة</button>
       </div>
       <div class="card">
@@ -180,24 +181,51 @@ function catOf(t){
   if(a==="marketplace"||t.shop)return"market";
   return"other";
 }
-$("imp").onclick=async()=>{
-  $("il").innerHTML='<div class="mut">جاري الجلب من الخريطة... ممكن ياخد نص دقيقة</div>';
+async function osmFetch(){
   const B=CITY.b[0][0]+","+CITY.b[0][1]+","+CITY.b[1][0]+","+CITY.b[1][1];
   const q=`[out:json][timeout:50];(nwr["place"~"^(suburb|neighbourhood|quarter|village|hamlet|locality)$"]["name"](${B});nwr["amenity"~"^(restaurant|cafe|fast_food|hospital|clinic|doctors|pharmacy|school|college|university|bank|marketplace|bus_station|fuel|place_of_worship)$"]["name"](${B});nwr["shop"~"^(mall|supermarket)$"]["name"](${B});nwr["tourism"~"^(hotel|guest_house)$"]["name"](${B});nwr["leisure"~"^(stadium|park)$"]["name"](${B}););out center tags;`;
-  let data=null;
   for(const ep of ["https://overpass-api.de/api/interpreter","https://overpass.kumi.systems/api/interpreter"]){
-    try{const r=await fetch(ep,{method:"POST",body:"data="+encodeURIComponent(q)});if(!r.ok)continue;data=await r.json();break}catch(e){}
+    try{const r=await fetch(ep,{method:"POST",body:"data="+encodeURIComponent(q)});if(!r.ok)continue;return await r.json()}catch(e){}
   }
-  if(!data){$("il").innerHTML='<div class="err">تعذر الجلب من الخريطة. جرّب تاني بعد شوية.</div>';return}
-  const have=new Set(places.map(p=>p.id)),seen=new Set();
-  found=data.elements.map(e=>{
+  return null;
+}
+function osmItems(data,skip){
+  const seen=new Set();
+  return data.elements.map(e=>{
     const t=e.tags||{},name=(t["name:ar"]||t.name||"").trim(),lat=e.lat??(e.center&&e.center.lat),lng=e.lon??(e.center&&e.center.lon);
     if(!name||lat==null||lng==null)return null;
     const id="osm_"+e.type+e.id,cat=catOf(t),key=cat+"|"+name;
-    if(have.has(id)||seen.has(key))return null;
+    if(skip.has(id)||seen.has(key))return null;
     seen.add(key);return{id,name,cat,lat,lng};
   }).filter(Boolean);
+}
+async function putAll(list){
+  for(let i=0;i<list.length;i+=400){
+    const w=writeBatch(db);
+    list.slice(i,i+400).forEach(f=>w.set(doc(db,"places",f.id),{name:f.name,cat:f.cat,lat:f.lat,lng:f.lng,source:"osm",createdAt:serverTimestamp()}));
+    await w.commit();
+  }
+}
+$("imp").onclick=async()=>{
+  $("il").innerHTML='<div class="mut">جاري الجلب من الخريطة... ممكن ياخد نص دقيقة</div>';
+  const data=await osmFetch();
+  if(!data){$("il").innerHTML='<div class="err">تعذر الجلب من الخريطة. جرّب تاني بعد شوية.</div>';return}
+  found=osmItems(data,new Set(places.map(p=>p.id)));
   rImp();
+};
+$("rep").onclick=async()=>{
+  if(!confirm("بيمسح كل الأماكن الحالية (حتى اللي ضفتها بيدك) ويجيب بدلها أحياء ومطاعم ومستشفيات وأسواق أبو حمد من الخريطة. تكمل؟"))return;
+  $("il").innerHTML='<div class="mut">جاري الجلب من الخريطة... ممكن ياخد نص دقيقة</div>';
+  const data=await osmFetch();
+  if(!data){$("il").innerHTML='<div class="err">تعذر الجلب من الخريطة. ما مسحنا شي، جرّب تاني بعد شوية.</div>';return}
+  const list=osmItems(data,new Set()).filter(f=>f.cat!=="other");
+  if(!list.length){$("il").innerHTML='<div class="err">الخريطة ما رجّعت أماكن لأبو حمد. ما مسحنا شي. ضيف الأماكن بيدك من الخريطة تحت.</div>';return}
+  try{
+    const old=places.slice();
+    for(let i=0;i<old.length;i+=400){const w=writeBatch(db);old.slice(i,i+400).forEach(p=>w.delete(doc(db,"places",p.id)));await w.commit()}
+    await putAll(list);
+    $("il").innerHTML='<div class="mut">تم: مسحنا '+old.length+' مكان قديم وحفظنا '+list.length+' مكان من أبو حمد ✓</div>';
+  }catch(e){alert("فشلت العملية، حاول تاني")}
 };
 function rImp(){
   const g={};found.forEach(f=>(g[f.cat]=g[f.cat]||[]).push(f));
