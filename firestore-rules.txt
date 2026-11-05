@@ -1,0 +1,89 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    // ---- helpers ----
+    function signedIn() { return request.auth != null; }
+    function anon() { return request.auth.token.firebase.sign_in_provider == 'anonymous'; }
+    function isAdmin() { return signedIn() && request.auth.token.email == 'admin@gmail.com'; }
+    function isUser(uid) { return signedIn() && !anon() && request.auth.uid == uid; }
+    function dpath() { return /databases/$(database)/documents/drivers/$(request.auth.uid); }
+    function activeDriver() {
+      return signedIn() && !anon() && exists(dpath()) &&
+        get(dpath()).data.active == true &&
+        (!('paidUntil' in get(dpath()).data) || get(dpath()).data.paidUntil > request.time);
+    }
+    function onlyChanges(keys) {
+      return request.resource.data.diff(resource.data).affectedKeys().hasOnly(keys);
+    }
+
+    // ---- settings and places: everyone signed in reads, admin writes ----
+    match /settings/{id} {
+      allow read: if signedIn();
+      allow write: if isAdmin();
+    }
+    match /places/{id} {
+      allow read: if signedIn();
+      allow write: if isAdmin();
+    }
+
+    // ---- drivers ----
+    match /drivers/{uid} {
+      allow read: if isAdmin() || isUser(uid);
+      allow create: if isUser(uid) && request.resource.data.online == false && (
+        (request.resource.data.active == false && !('paidUntil' in request.resource.data)) ||
+        (request.resource.data.active == true && request.resource.data.trial == true &&
+         request.resource.data.paidUntil > request.time &&
+         request.resource.data.paidUntil <= request.time + duration.value(45, 'd'))
+      );
+      allow update: if isAdmin() || (isUser(uid) && onlyChanges(['online', 'lat', 'lng']));
+      allow delete: if isAdmin();
+    }
+
+    // ---- live driver locations (no names or phones) ----
+    match /driverLocations/{uid} {
+      allow read: if signedIn();
+      allow create, update: if isUser(uid) && activeDriver() &&
+        request.resource.data.keys().hasOnly(['lat', 'lng', 'vehicleType', 'online', 'updatedAt']);
+      allow delete: if isAdmin() || isUser(uid);
+    }
+
+    // ---- rides ----
+    match /rides/{id} {
+      allow create: if signedIn() &&
+        request.resource.data.status == 'pending' &&
+        request.resource.data.customerUid == request.auth.uid &&
+        request.resource.data.vehicleType in ['car', 'dafar', 'box', 'rickshaw', 'bike'];
+
+      allow read: if isAdmin()
+        || (signedIn() && resource.data.get('customerUid', '') == request.auth.uid)
+        || (signedIn() && resource.data.get('driverId', '') == request.auth.uid)
+        || (resource.data.status == 'pending' && activeDriver());
+
+      allow update: if isAdmin()
+        // customer cancels own ride
+        || (signedIn() && resource.data.get('customerUid', '') == request.auth.uid &&
+            resource.data.status in ['pending', 'accepted'] &&
+            request.resource.data.status == 'cancelled' && onlyChanges(['status']))
+        // active driver accepts a pending ride of his own vehicle type
+        || (activeDriver() && resource.data.status == 'pending' &&
+            request.resource.data.status == 'accepted' &&
+            request.resource.data.driverId == request.auth.uid &&
+            resource.data.vehicleType == get(dpath()).data.vehicleType &&
+            onlyChanges(['status', 'driverId', 'driverName', 'driverPhone', 'driverVehicle', 'driverPlate', 'acceptedAt']))
+        // driver finishes his own accepted ride
+        || (signedIn() && resource.data.get('driverId', '') == request.auth.uid &&
+            resource.data.status == 'accepted' &&
+            request.resource.data.status == 'done' && onlyChanges(['status']));
+
+      allow delete: if isAdmin();
+    }
+
+    // ---- payments ----
+    match /payments/{id} {
+      allow create: if isUser(request.resource.data.driverId) && request.resource.data.status == 'pending';
+      allow read: if isAdmin() || (signedIn() && resource.data.driverId == request.auth.uid);
+      allow update, delete: if isAdmin();
+    }
+  }
+}

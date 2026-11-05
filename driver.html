@@ -35,7 +35,7 @@ a.btn.l{background:var(--foam);color:var(--sea)}
 </style>
 </head>
 <body>
-<header><h1>سندباد</h1><p>تطبيق السواق</p></header>
+<header><h1>سندباد</h1><p>تطبيق السواق • أبو حمد • v20</p></header>
 <main>
   <section id="auth" class="card hide">
     <h2 id="at">دخول السواق</h2>
@@ -73,6 +73,7 @@ a.btn.l{background:var(--foam);color:var(--sea)}
       <label for="pn">اسم المحوِّل</label><input id="pn">
       <button class="go" id="payb">أرسلت الدفع</button><div class="err" id="e3"></div>
     </div>
+    <button class="alt hide" id="back">رجوع</button>
     <button class="alt" id="out2">تسجيل الخروج</button>
   </section>
 
@@ -80,6 +81,7 @@ a.btn.l{background:var(--foam);color:var(--sea)}
     <div class="card sw"><div><b id="who"></b><div class="mut" id="veh"></div></div><button class="tg" id="tg">غير متاح</button></div>
     <div class="mut" id="stl" style="margin:0 4px 8px"></div>
     <div class="err" id="e2"></div>
+    <button class="alt" id="renew">تجديد الاشتراك</button>
     <button class="alt" id="out">تسجيل الخروج</button>
     <div id="cur" class="card hide"></div>
     <div id="list"></div>
@@ -89,7 +91,7 @@ a.btn.l{background:var(--foam);color:var(--sea)}
 <script type="module">
 import {initializeApp} from "https://www.gstatic.com/firebasejs/10.14.1/firebase-app.js";
 import {getAuth,createUserWithEmailAndPassword,signInWithEmailAndPassword,signOut,onAuthStateChanged} from "https://www.gstatic.com/firebasejs/10.14.1/firebase-auth.js";
-import {getFirestore,collection,doc,setDoc,addDoc,getDoc,updateDoc,onSnapshot,query,where,runTransaction,serverTimestamp} from "https://www.gstatic.com/firebasejs/10.14.1/firebase-firestore.js";
+import {getFirestore,collection,doc,setDoc,addDoc,getDoc,updateDoc,Timestamp,onSnapshot,query,where,runTransaction,serverTimestamp} from "https://www.gstatic.com/firebasejs/10.14.1/firebase-firestore.js";
 
 const app=initializeApp({
   apiKey:"AIzaSyBmZP_ZaIOUiZeexQmtPlYVJENJYIk3iME",
@@ -107,7 +109,7 @@ const vlabel=x=>(VN[x.vehicleType]||"")+(x.vehicleType==="car"&&x.carModel?" "+x
 let RADIUS=1,rcfg=false;
 let uid,me=null,pos=null,watchId=null,unRides=null,unCur=null,rides=[],lastSent=0;
 
-let unMe=null;
+let unMe=null,renewing=false,lastU=0;
 onAuthStateChanged(auth,u=>{
   if(unMe){unMe();unMe=null}
   if(!u||u.isAnonymous){uid=null;me=null;stopAll();if(unPay){unPay();unPay=null}if(unAct){unAct();unAct=null}show("auth");return}
@@ -116,18 +118,21 @@ onAuthStateChanged(auth,u=>{
     if(!s.exists()){show("reg");return}
     me=s.data();
     const exp=me.paidUntil&&me.paidUntil.toMillis()<Date.now();
+    const pu=me.paidUntil?me.paidUntil.toMillis():0;if(pu!==lastU){lastU=pu;renewing=false}
     if(!me.active||exp){stopAll();showPay(exp);return}
-    $("who").textContent=me.name;$("veh").textContent=vlabel(me)+" • "+me.plate;
-    setBtn(!!me.online);show("home");watchActive();
+    $("who").textContent=me.name;const daysLeft=me.paidUntil?Math.max(0,Math.ceil((me.paidUntil.toMillis()-Date.now())/864e5)):null;
+    $("veh").textContent=vlabel(me)+" • "+me.plate+(daysLeft!=null?" • "+(me.trial?"تجربة مجانية، ":"")+"باقي "+daysLeft+" يوم":"");
+    setBtn(!!me.online);if(!renewing)show("home");watchActive();
     me.online?goOnline():stopAll();
   });
 });
 
 let unPay=null,payCfg=null,curPrice=null;
-async function showPay(exp){
+async function showPay(exp,renew){
   show("wait");
-  $("wt").textContent=exp?"انتهى اشتراكك":"اشتراكك غير مفعّل";
-  $("wm").textContent=exp?"جدد اشتراكك عشان تستلم الطلبات.":"ادفع الاشتراك الشهري عشان يتفعّل حسابك.";
+  $("wt").textContent=renew?"تجديد الاشتراك":exp?"انتهى اشتراكك":"اشتراكك غير مفعّل";
+  $("back").classList.toggle("hide",!renew);
+  $("wm").textContent=renew?"جدد قبل ما ينتهي. الأيام المتبقية بتضاف على الشهر الجديد.":exp?"جدد اشتراكك عشان تستلم الطلبات.":"ادفع الاشتراك الشهري عشان يتفعّل حسابك.";
   if(!payCfg){try{const s=await getDoc(doc(db,"settings","payment"));payCfg=s.exists()?s.data():{}}catch(e){payCfg={}}}
   const DEF={car:100000,rickshaw:50000,bike:20000,dafar:0,box:0},PK={car:"priceCar",rickshaw:"priceRickshaw",bike:"priceBike",dafar:"priceDafar",box:"priceBox"};
   curPrice=Number(payCfg[PK[me.vehicleType]])||DEF[me.vehicleType];
@@ -166,7 +171,8 @@ $("ab").onclick=async()=>{
       const name=$("an").value.trim(),plate=$("al").value.trim();
       if(name.length<2||!plate){er.textContent="اكتب الاسم ورقم اللوحة";return}
       const c=await createUserWithEmailAndPassword(auth,email,pw);
-      await setDoc(doc(db,"drivers",c.user.uid),{name,phone:ph,plate,vehicleType:$("av").value,carModel:$("av").value==="car"?$("md").value:"",active:false,online:false,createdAt:serverTimestamp()});
+      let td=15;try{const cs=await getDoc(doc(db,"settings","payment"));if(cs.exists()&&Number(cs.data().trialDays)>=0)td=Number(cs.data().trialDays)}catch(e){}
+      await setDoc(doc(db,"drivers",c.user.uid),{name,phone:ph,plate,vehicleType:$("av").value,carModel:$("av").value==="car"?$("md").value:"",active:td>0,trial:td>0,...(td>0?{paidUntil:Timestamp.fromMillis(Date.now()+td*864e5)}:{}),online:false,createdAt:serverTimestamp()});
     }else await signInWithEmailAndPassword(auth,email,pw);
     $("aw").value="";
   }catch(e){
@@ -178,6 +184,8 @@ async function logout(){
   try{if(uid){await setDoc(doc(db,"driverLocations",uid),{online:false,updatedAt:serverTimestamp()},{merge:true});await updateDoc(doc(db,"drivers",uid),{online:false})}}catch(e){}
   signOut(auth);
 }
+$("renew").onclick=()=>{renewing=true;showPay(false,true)};
+$("back").onclick=()=>{renewing=false;show("home")};
 $("out").onclick=logout;$("out2").onclick=logout;
 $("regb").onclick=async()=>{
   const name=$("nm").value.trim(),phone=$("ph").value.trim(),plate=$("pl").value.trim();
@@ -197,7 +205,7 @@ function goOnline(){
   if(!navigator.geolocation){$("e2").textContent="المتصفح ما بدعم تحديد الموقع";return}
   const onPos=p=>{
     pos={lat:p.coords.latitude,lng:p.coords.longitude};$("e2").textContent="";render();
-    if(Date.now()-lastSent>20000){lastSent=Date.now();updateDoc(doc(db,"drivers",uid),pos).catch(()=>{});setDoc(doc(db,"driverLocations",uid),{lat:pos.lat,lng:pos.lng,vehicleType:me.vehicleType,online:true,updatedAt:serverTimestamp()}).catch(()=>{})}
+    if(Date.now()-lastSent>30000){lastSent=Date.now();setDoc(doc(db,"driverLocations",uid),{lat:pos.lat,lng:pos.lng,vehicleType:me.vehicleType,online:true,updatedAt:serverTimestamp()}).catch(()=>{})}
   };
   const onErr=()=>{$("e2").textContent="فعّل الـ GPS واسمح للمتصفح بالوصول للموقع"};
   if(watchId===null){
@@ -207,7 +215,7 @@ function goOnline(){
   }
   if(!unRides)unRides=onSnapshot(query(collection(db,"rides"),where("status","==","pending"),where("vehicleType","==",me.vehicleType)),s=>{
     rides=s.docs.map(d=>({id:d.id,...d.data()}));render();
-  });
+  },()=>{$("e2").textContent="ما قدرنا نحمّل الطلبات. تأكد إنو اشتراكك مفعّل."});
 }
 function stopAll(){
   if(watchId!==null){navigator.geolocation.clearWatch(watchId);watchId=null}
