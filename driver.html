@@ -32,10 +32,15 @@ button{font:inherit;cursor:pointer;border:0;border-radius:12px;padding:14px;widt
 .hide{display:none}
 a.btn{display:block;text-align:center;background:var(--sea);color:#fff;text-decoration:none;border-radius:12px;padding:13px;font-weight:700;margin-top:8px}
 a.btn.l{background:var(--foam);color:var(--sea)}
+#pnd{position:fixed;inset:0;background:var(--foam);z-index:100;display:flex;flex-direction:column}
+#pnd.hide{display:none}
+.chips{display:flex;gap:6px;flex-wrap:wrap;margin-top:4px}
+.chips button{width:auto;margin:0;padding:8px 14px;font-size:14px;background:#fff;color:var(--ink)}
+.chips button.on{background:var(--ink);color:#fff}
 </style>
 </head>
 <body>
-<header><h1>سندباد</h1><p>تطبيق السواق • أبو حمد • v20</p></header>
+<header><h1>سندباد</h1><p>تطبيق السواق • أبو حمد • v22</p></header>
 <main>
   <section id="auth" class="card hide">
     <h2 id="at">دخول السواق</h2>
@@ -80,6 +85,7 @@ a.btn.l{background:var(--foam);color:var(--sea)}
   <section id="home" class="hide">
     <div class="card sw"><div><b id="who"></b><div class="mut" id="veh"></div></div><button class="tg" id="tg">غير متاح</button></div>
     <div class="mut" id="stl" style="margin:0 4px 8px"></div>
+    <button class="ok" id="allp" style="margin:0 0 8px">كل الطلبات المعلقة (<span id="pcn">0</span>)</button>
     <div class="err" id="e2"></div>
     <button class="alt" id="renew">تجديد الاشتراك</button>
     <button class="alt" id="out">تسجيل الخروج</button>
@@ -88,6 +94,14 @@ a.btn.l{background:var(--foam);color:var(--sea)}
   </section>
 </main>
 
+<div id="pnd" class="hide">
+  <div style="background:#12263A;color:#fff;padding:14px;display:flex;justify-content:space-between;align-items:center"><b>الطلبات المعلقة</b><button id="pcl" style="width:auto;margin:0;padding:8px 16px;background:#ffffff22;color:#fff">إغلاق</button></div>
+  <div style="padding:10px 12px 0">
+    <div class="mut">المسافة من موقعك</div><div id="pfk" class="chips"></div>
+    <div class="mut" style="margin-top:8px">الترتيب</div><div id="pfs" class="chips"></div>
+  </div>
+  <div id="pl2" style="padding:10px 12px;overflow:auto;flex:1"></div>
+</div>
 <script type="module">
 import {initializeApp} from "https://www.gstatic.com/firebasejs/10.14.1/firebase-app.js";
 import {getAuth,createUserWithEmailAndPassword,signInWithEmailAndPassword,signOut,onAuthStateChanged} from "https://www.gstatic.com/firebasejs/10.14.1/firebase-auth.js";
@@ -184,6 +198,25 @@ async function logout(){
   try{if(uid){await setDoc(doc(db,"driverLocations",uid),{online:false,updatedAt:serverTimestamp()},{merge:true});await updateDoc(doc(db,"drivers",uid),{online:false})}}catch(e){}
   signOut(auth);
 }
+const fresh=r=>{const t=r.createdAt&&r.createdAt.toMillis?r.createdAt.toMillis():Date.now();return Date.now()-t<30*60*1000};
+const KMS=[[1,"1 كم"],[3,"3 كم"],[5,"5 كم"],[10,"10 كم"],[25,"25 كم"],[Infinity,"الكل"]];
+let pf={km:Infinity,sort:"near"};
+function chips(){
+  $("pfk").innerHTML=KMS.map(([v,t])=>`<button data-k="${v}" class="${pf.km===v?"on":""}">${t}</button>`).join("");
+  $("pfs").innerHTML=`<button data-s="near" class="${pf.sort==="near"?"on":""}">الأقرب</button><button data-s="price" class="${pf.sort==="price"?"on":""}">الأعلى سعراً</button>`;
+  $("pfk").querySelectorAll("button").forEach(b=>b.onclick=()=>{pf.km=b.dataset.k==="Infinity"?Infinity:Number(b.dataset.k);chips();renderPnd()});
+  $("pfs").querySelectorAll("button").forEach(b=>b.onclick=()=>{pf.sort=b.dataset.s;chips();renderPnd()});
+}
+function renderPnd(){
+  if($("pnd").classList.contains("hide"))return;
+  if(!pos){$("pl2").innerHTML='<div class="card mut">جاري تحديد موقعك...</div>';return}
+  const l=rides.filter(fresh).map(r=>({...r,d:km(pos.lat,pos.lng,r.lat,r.lng)})).filter(r=>isFinite(r.d)&&r.d<=pf.km)
+    .sort(pf.sort==="price"?(a,b)=>(b.price||0)-(a.price||0):(a,b)=>a.d-b.d);
+  $("pl2").innerHTML=l.length?l.map(r=>`<div class="card"><div class="dist">${r.d.toFixed(1)} كم منك</div>${r.price?`<div><b>${Number(r.price).toLocaleString("en-US")} جنيه</b> • ${r.distanceKm} كم مشوار</div>`:""}<h2>${esc(r.customerName)}</h2><div class="mut">الوجهة: ${esc(r.destination)}</div><button class="ok" data-id="${r.id}">اقبل الطلب</button></div>`).join(""):'<div class="card mut">ما في طلبات بهذه المحددات. جرّب مسافة أكبر.</div>';
+  $("pl2").querySelectorAll("[data-id]").forEach(b=>b.onclick=()=>accept(b.dataset.id));
+}
+$("allp").onclick=()=>{chips();$("pnd").classList.remove("hide");renderPnd()};
+$("pcl").onclick=()=>$("pnd").classList.add("hide");
 $("renew").onclick=()=>{renewing=true;showPay(false,true)};
 $("back").onclick=()=>{renewing=false;show("home")};
 $("out").onclick=logout;$("out2").onclick=logout;
@@ -225,8 +258,10 @@ function stopAll(){
 function km(a,b,c,d){const r=x=>x*Math.PI/180,h=Math.sin(r(c-a)/2)**2+Math.cos(r(a))*Math.cos(r(c))*Math.sin(r(d-b)/2)**2;return 12742*Math.asin(Math.sqrt(h))}
 function render(){
   if(!me||!me.online)return;
+  renderPnd();
   if(!pos){$("stl").textContent="موقعك لسه ما اتحدد";$("list").innerHTML='<div class="card mut">جاري تحديد موقعك... لو طولت اطلع لمكان مفتوح أو فعّل دقة الموقع العالية.</div>';return}
-  const all=rides.map(r=>({...r,d:km(pos.lat,pos.lng,r.lat,r.lng)})).filter(r=>isFinite(r.d)),near=all.filter(r=>r.d<=RADIUS).sort((a,b)=>a.d-b.d);
+  const all=rides.filter(fresh).map(r=>({...r,d:km(pos.lat,pos.lng,r.lat,r.lng)})).filter(r=>isFinite(r.d)),near=all.filter(r=>r.d<=RADIUS).sort((a,b)=>a.d-b.d);
+  $("pcn").textContent=all.length;
   const mn=all.length?Math.min(...all.map(r=>r.d)):null;
   $("stl").textContent="طلبات معلقة من نوع مركبتك: "+all.length+(mn!=null?" • أقرب طلب على بعد "+mn.toFixed(1)+" كم (نطاق الظهور "+RADIUS+" كم)":"");
   $("list").innerHTML=near.length?near.map(r=>`<div class="card"><div class="dist">${r.d.toFixed(1)} كم منك</div>${r.price?`<div><b>${Number(r.price).toLocaleString("en-US")} جنيه</b> • ${r.distanceKm} كم</div>`:""}<h2>${esc(r.customerName)}</h2><div class="mut">الوجهة: ${esc(r.destination)}</div><button class="ok" data-id="${r.id}">اقبل الطلب</button></div>`).join(""):`<div class="card mut">ما في طلبات في حدود كيلو منك هسه. خليك متاح وبتظهر هنا.</div>`;
@@ -242,7 +277,8 @@ async function accept(id){
       if(!s.exists()||s.data().status!=="pending")throw new Error("taken");
       t.update(ref,{status:"accepted",driverId:uid,driverName:me.name,driverPhone:me.phone,driverVehicle:vlabel(me),driverPlate:me.plate,acceptedAt:serverTimestamp()});
     });
-  }catch(e){$("e2").textContent=e.message==="taken"?"سواق تاني سبقك لهذا الطلب":"فشل قبول الطلب، حاول تاني";}
+  $("pnd").classList.add("hide");
+  }catch(e){const m=e.message==="taken"?"سواق تاني سبقك لهذا الطلب":"فشل قبول الطلب، حاول تاني";$("e2").textContent=m;if(!$("pnd").classList.contains("hide"))alert(m)}
 }
 let unAct=null;
 function watchActive(){
