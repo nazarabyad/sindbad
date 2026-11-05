@@ -25,7 +25,7 @@ button{font:inherit;cursor:pointer;border:0;border-radius:12px;padding:12px;widt
 .ok{background:var(--sea);color:#fff}
 .no{background:#f6d6d3;color:var(--bad)}
 .tabs{display:flex;gap:6px;margin-bottom:10px}
-.tabs button{margin:0;background:#fff;color:var(--ink);padding:10px 4px;font-size:15px}
+.tabs button{margin:0;background:#fff;color:var(--ink);padding:10px 2px;font-size:13px}
 .tabs button.on{background:var(--ink);color:#fff}
 .sw{display:flex;justify-content:space-between;align-items:center;gap:8px}
 .mut{color:var(--mut);font-size:14px}
@@ -38,7 +38,7 @@ select{width:100%;padding:12px;border:1.5px solid #cfdbe0;border-radius:12px;fon
 </style>
 </head>
 <body>
-<header><div><h1>سندباد</h1><p>لوحة الإدارة • أبو حمد • v18</p></div><button id="out" class="hide">خروج</button></header>
+<header><div><h1>سندباد</h1><p>لوحة الإدارة • أبو حمد • v19</p></div><button id="out" class="hide">خروج</button></header>
 <main>
   <section id="login" class="card hide">
     <label for="em">الإيميل</label><input id="em" type="email" autocomplete="username">
@@ -52,10 +52,12 @@ select{width:100%;padding:12px;border:1.5px solid #cfdbe0;border-radius:12px;fon
       <button data-t="drv">السواق</button>
       <button data-t="rid">المشاوير</button>
       <button data-t="plc">الأماكن</button>
+      <button data-t="prcw">الأسعار</button>
     </div>
     <div id="pay"></div>
     <div id="drv" class="hide"><input id="q" placeholder="ابحث بالاسم أو الرقم"><div id="dl"></div></div>
     <div id="rid" class="hide"></div>
+    <div id="prcw" class="hide"><div id="prc"></div></div>
     <div id="plc" class="hide">
       <div class="card"><b>استيراد من الخريطة العامة</b>
         <div class="mut">يجلب الأحياء والمطاعم والمستشفيات والأسواق وغيرها المسجلة في أبو حمد، وتختار شنو تحفظ.</div>
@@ -79,7 +81,7 @@ select{width:100%;padding:12px;border:1.5px solid #cfdbe0;border-radius:12px;fon
 <script type="module">
 import {initializeApp} from "https://www.gstatic.com/firebasejs/10.14.1/firebase-app.js";
 import {getAuth,signInWithEmailAndPassword,signOut,onAuthStateChanged} from "https://www.gstatic.com/firebasejs/10.14.1/firebase-auth.js";
-import {getFirestore,collection,doc,onSnapshot,query,where,orderBy,limit,writeBatch,updateDoc,addDoc,deleteDoc,Timestamp,serverTimestamp} from "https://www.gstatic.com/firebasejs/10.14.1/firebase-firestore.js";
+import {getFirestore,collection,doc,onSnapshot,query,where,orderBy,limit,writeBatch,updateDoc,addDoc,deleteDoc,setDoc,Timestamp,serverTimestamp} from "https://www.gstatic.com/firebasejs/10.14.1/firebase-firestore.js";
 
 const app=initializeApp({
   apiKey:"AIzaSyBmZP_ZaIOUiZeexQmtPlYVJENJYIk3iME",
@@ -119,6 +121,8 @@ function start(){
   },fail));
   unsubs.push(onSnapshot(query(collection(db,"rides"),orderBy("createdAt","desc"),limit(20)),s=>{rides=s.docs.map(d=>({id:d.id,...d.data()}));rRid()},fail));
   unsubs.push(onSnapshot(collection(db,"places"),s=>{places=s.docs.map(d=>({id:d.id,...d.data()}));rPlc()},fail));
+  unsubs.push(onSnapshot(doc(db,"settings","pricing"),s=>{prc=s.exists()?s.data():{};rPrice()}));
+  unsubs.push(onSnapshot(doc(db,"settings","payment"),s=>{pay0=s.exists()?s.data():{};rPrice()}));
 }
 
 function rPay(){
@@ -138,7 +142,7 @@ function rDrv(){
   const l=drivers.filter(d=>!q||(d.name||"").includes(q)||(d.phone||"").includes(q));
   $("dl").innerHTML=l.map(d=>{
     const exp=d.paidUntil&&d.paidUntil.toMillis()<Date.now(),st=!d.active?"غير مفعّل":exp?"منتهي":"مفعّل";
-    return `<div class="card"><div class="sw"><b>${esc(d.name)}</b><span class="tag ${st==="مفعّل"?"g":"r"}">${st}</span></div>
+    return `<div class="card"><div class="sw"><b>${esc(d.name)}</b><span class="tag ${st==="مفعّل"?"g":"r"}">${st==="مفعّل"&&d.trial?"تجربة مجانية":st}</span></div>
     <div class="mut"><span dir="ltr">${esc(d.phone)}</span> • ${VN[d.vehicleType]||""}${d.carModel?" "+esc(d.carModel):""} • لوحة ${esc(d.plate)}</div>
     <div class="mut">ينتهي: ${fd(d.paidUntil)}${d.online?" • متاح الآن":""}</div>
     <button class="ok" data-a="act" data-id="${d.id}">تفعيل / تجديد 30 يوم</button>
@@ -254,11 +258,45 @@ $("clr").onclick=async()=>{
   catch(e){alert("فشل المسح، حاول تاني")}
 };
 $("pq").oninput=rPlc;
+const TY=[["car","صالون","Car"],["dafar","دفار","Dafar"],["box","بوكس","Box"],["rickshaw","ركشة","Rickshaw"],["bike","موتر","Bike"]];
+const DK={car:6000,rickshaw:4000,bike:2000},DS={car:100000,rickshaw:50000,bike:20000};
+let prc={},pay0={};
+function rPrice(){
+  const ae=document.activeElement;
+  if(ae&&ae.closest&&ae.closest("#prc"))return;
+  const v=x=>x==null?"":x;
+  $("prc").innerHTML=`<div class="card mut">أول كيلو بسعر ثابت، وبعدو كل كيلو بسعر الكيلو. السعر بيتقرب لأقرب 500 جنيه. التغيير بيطبق على الزبائن بعد ما يعيدوا فتح التطبيق.</div>`+TY.map(([k,n,C])=>`<div class="card"><b>${n}</b>
+    <label>الكيلو الأول (ثابت)</label><input type="number" inputmode="numeric" id="b_${k}" value="${v(prc["base"+C]??10000)}">
+    <label>سعر الكيلو بعد الأول</label><input type="number" inputmode="numeric" id="k_${k}" value="${v(prc["priceKm"+C]??DK[k])}">
+    <label>الاشتراك الشهري</label><input type="number" inputmode="numeric" id="s_${k}" value="${v(pay0["price"+C]??DS[k])}"></div>`).join("")+`<div class="card">
+    <label>أيام التجربة المجانية للسواق الجديد</label><input type="number" inputmode="numeric" id="trd" value="${v(pay0.trialDays??15)}">
+    <label>رقم حساب بنكك</label><input id="bka" value="${esc(pay0.bankAccount||"")}">
+    <label>اسم صاحب الحساب</label><input id="bkh" value="${esc(pay0.holderName||"")}">
+    <button class="go" id="psave">حفظ الأسعار</button></div>`;
+  $("psave").onclick=savePrices;
+}
+async function savePrices(){
+  const n=id=>{const t=$(id).value.trim();return t===""?null:Number(t)};
+  const pr={},py={};
+  TY.forEach(([k,,C])=>{
+    const b=n("b_"+k),kk=n("k_"+k),s=n("s_"+k);
+    if(b!=null&&b>=0)pr["base"+C]=b;
+    if(kk!=null&&kk>=0)pr["priceKm"+C]=kk;
+    if(s!=null&&s>=0)py["price"+C]=s;
+  });
+  const t=n("trd");if(t!=null&&t>=0)py.trialDays=t;
+  py.bankAccount=$("bka").value.trim();py.holderName=$("bkh").value.trim();
+  try{
+    await setDoc(doc(db,"settings","pricing"),pr,{merge:true});
+    await setDoc(doc(db,"settings","payment"),py,{merge:true});
+    alert("تم حفظ الأسعار ✓");
+  }catch(e){alert("فشل الحفظ، حاول تاني")}
+}
 $("q").oninput=rDrv;
 
 document.querySelectorAll(".tabs button").forEach(b=>b.onclick=()=>{
   document.querySelectorAll(".tabs button").forEach(x=>x.classList.toggle("on",x===b));
-  ["pay","drv","rid","plc"].forEach(t=>$(t).classList.toggle("hide",t!==b.dataset.t));
+  ["pay","drv","rid","plc","prcw"].forEach(t=>$(t).classList.toggle("hide",t!==b.dataset.t));
   if(b.dataset.t==="plc")initMap();
 });
 
@@ -271,7 +309,7 @@ $("panel").onclick=async e=>{
       const d=drivers.find(x=>x.id===id);
       const base=Math.max(Date.now(),d&&d.active&&d.paidUntil?d.paidUntil.toMillis():0);
       const w=writeBatch(db);
-      w.update(doc(db,"drivers",id),{active:true,paidUntil:Timestamp.fromMillis(base+30*864e5)});
+      w.update(doc(db,"drivers",id),{active:true,trial:false,paidUntil:Timestamp.fromMillis(base+30*864e5)});
       if(p)w.update(doc(db,"payments",p),{status:"approved",approvedAt:serverTimestamp()});
       await w.commit();
     }else if(a==="no"){
