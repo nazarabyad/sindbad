@@ -4,6 +4,11 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <meta name="theme-color" content="#12263A">
+<link rel="manifest" href="manifest-driver.json">
+<link rel="apple-touch-icon" href="icon-driver-192.png">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<script>if("serviceWorker" in navigator)addEventListener("load",function(){navigator.serviceWorker.register("sw.js").catch(function(){})})</script>
 <title>سندباد - السواق</title>
 <link href="https://fonts.googleapis.com/css2?family=Tajawal:wght@400;700;800&display=swap" rel="stylesheet">
 <style>
@@ -32,6 +37,9 @@ button{font:inherit;cursor:pointer;border:0;border-radius:12px;padding:14px;widt
 .hide{display:none}
 a.btn{display:block;text-align:center;background:var(--sea);color:#fff;text-decoration:none;border-radius:12px;padding:13px;font-weight:700;margin-top:8px}
 a.btn.l{background:var(--foam);color:var(--sea)}
+#cnl{position:fixed;inset:0;background:#000a;z-index:200;display:flex;align-items:center;justify-content:center;padding:20px}
+#cnl.hide{display:none}
+#cnl .box{background:#fff;border-radius:20px;padding:22px;text-align:center;max-width:360px;width:100%}
 #pnd{position:fixed;inset:0;background:var(--foam);z-index:100;display:flex;flex-direction:column}
 #pnd.hide{display:none}
 .chips{display:flex;gap:6px;flex-wrap:wrap;margin-top:4px}
@@ -40,7 +48,7 @@ a.btn.l{background:var(--foam);color:var(--sea)}
 </style>
 </head>
 <body>
-<header><h1>سندباد</h1><p>تطبيق السواق • أبو حمد • v22</p></header>
+<header><h1>سندباد</h1><p>تطبيق السواق • أبو حمد • v25</p></header>
 <main>
   <section id="auth" class="card hide">
     <h2 id="at">دخول السواق</h2>
@@ -94,6 +102,11 @@ a.btn.l{background:var(--foam);color:var(--sea)}
   </section>
 </main>
 
+<div id="cnl" class="hide"><div class="box">
+  <div style="font-size:42px">⚠️</div><h2 style="font-size:20px;margin:6px 0">الزبون ألغى الطلب</h2>
+  <div id="cnt" class="mut" style="margin-bottom:6px"></div>
+  <button class="go" id="cok">تمام</button>
+</div></div>
 <div id="pnd" class="hide">
   <div style="background:#12263A;color:#fff;padding:14px;display:flex;justify-content:space-between;align-items:center"><b>الطلبات المعلقة</b><button id="pcl" style="width:auto;margin:0;padding:8px 16px;background:#ffffff22;color:#fff">إغلاق</button></div>
   <div style="padding:10px 12px 0">
@@ -280,11 +293,24 @@ async function accept(id){
   $("pnd").classList.add("hide");
   }catch(e){const m=e.message==="taken"?"سواق تاني سبقك لهذا الطلب":"فشل قبول الطلب، حاول تاني";$("e2").textContent=m;if(!$("pnd").classList.contains("hide"))alert(m)}
 }
+function beep(){
+  try{const A=window.AudioContext||window.webkitAudioContext,x=new A(),o=x.createOscillator(),g=x.createGain();
+    o.connect(g);g.connect(x.destination);o.frequency.value=660;g.gain.value=.25;o.start();
+    setTimeout(()=>{o.stop();x.close()},450)}catch(e){}
+}
+function notifyCancel(r){
+  $("cnt").textContent="الزبون "+(r.customerName||"")+" ألغى المشوار إلى "+(r.destination||"");
+  $("cnl").classList.remove("hide");
+  try{if(navigator.vibrate)navigator.vibrate([300,150,300,150,300])}catch(e){}
+  beep();
+}
+$("cok").onclick=()=>$("cnl").classList.add("hide");
 let unAct=null;
 function watchActive(){
   if(unAct||!uid)return;
   unAct=onSnapshot(query(collection(db,"rides"),where("driverId","==",uid),where("status","==","accepted")),s=>{
     const c=$("cur");
+    s.docChanges().forEach(ch=>{if(ch.type==="removed"){const r=ch.doc.data();if(r.status==="cancelled")notifyCancel(r)}});
     if(s.empty){c.classList.add("hide");c.innerHTML="";return}
     c.classList.remove("hide");
     c.innerHTML=s.docs.map(x=>{
