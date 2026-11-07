@@ -48,7 +48,7 @@ select{width:100%;padding:12px;border:1.5px solid #cfdbe0;border-radius:12px;fon
 </style>
 </head>
 <body>
-<header><div><h1>سندباد</h1><p>لوحة الإدارة • أبو حمد • v27</p></div><button id="out" class="hide">خروج</button></header>
+<header><div><h1>سندباد</h1><p>لوحة الإدارة • أبو حمد • v28</p></div><button id="out" class="hide">خروج</button></header>
 <main>
   <section id="login" class="card hide">
     <label for="em">الإيميل</label><input id="em" type="email" autocomplete="username">
@@ -104,7 +104,7 @@ select{width:100%;padding:12px;border:1.5px solid #cfdbe0;border-radius:12px;fon
 <script type="module">
 import {initializeApp} from "https://www.gstatic.com/firebasejs/10.14.1/firebase-app.js";
 import {getAuth,signInWithEmailAndPassword,signOut,onAuthStateChanged} from "https://www.gstatic.com/firebasejs/10.14.1/firebase-auth.js";
-import {getFirestore,collection,doc,onSnapshot,query,where,orderBy,limit,writeBatch,updateDoc,addDoc,deleteDoc,setDoc,Timestamp,serverTimestamp} from "https://www.gstatic.com/firebasejs/10.14.1/firebase-firestore.js";
+import {getFirestore,collection,doc,onSnapshot,query,where,orderBy,limit,writeBatch,updateDoc,addDoc,deleteDoc,setDoc,getDocs,Timestamp,serverTimestamp} from "https://www.gstatic.com/firebasejs/10.14.1/firebase-firestore.js";
 
 const app=initializeApp({
   apiKey:"AIzaSyBmZP_ZaIOUiZeexQmtPlYVJENJYIk3iME",
@@ -178,9 +178,10 @@ function rDrv(){
     <button class="no" data-a="rm" data-id="${d.id}">حذف السواق نهائياً</button></div>`}).join("")||'<div class="card mut">ما في سواقين</div>';
 }
 function rRid(){
-  $("rid").innerHTML=`<div class="card mut">آخر ${rides.length} مشوار</div>`+rides.map(r=>`<div class="card"><div class="sw"><b>${esc(r.customerName)}</b><span class="tag">${ST[r.status]||esc(r.status)}</span></div>
+  $("rid").innerHTML=`<div class="card"><div class="mut">آخر ${rides.length} مشوار</div><button class="no" data-a="rclr">مسح المشاوير المنتهية (تم + ملغي)</button><button class="no" data-a="rall">مسح كل المشاوير</button></div>`+rides.map(r=>`<div class="card"><div class="sw"><b>${esc(r.customerName)}</b><span class="tag">${ST[r.status]||esc(r.status)}</span></div>
   <div class="mut">${VN[r.vehicleType]||""} • ${r.price?num(r.price)+" جنيه":"—"} • ${r.distanceKm||"—"} كم</div>
-  <div class="mut">الوجهة: ${esc(r.destination)}${r.driverName?" • السواق: "+esc(r.driverName):""}</div></div>`).join("");
+  <div class="mut">الوجهة: ${esc(r.destination)}${r.driverName?" • السواق: "+esc(r.driverName):""}</div>
+  <button class="no" data-a="rdel" data-id="${r.id}">حذف المشوار</button></div>`).join("");
 }
 const CITY={n:"أبو حمد",c:[19.5402,33.3252],b:[[19.46,33.24],[19.62,33.42]]};
 const CAT={hood:"حي",food:"مطعم",health:"صحة",market:"سوق",other:"مكان آخر"};
@@ -375,6 +376,14 @@ $("panel").onclick=async e=>{
       pays.filter(p=>p.driverId===old.id).forEach(p=>w.update(doc(db,"payments",p.id),{driverId:id}));
       w.delete(doc(db,"drivers",old.id));w.delete(doc(db,"driverLocations",old.id));
       await w.commit();
+    }else if(a==="rdel"){
+      if(confirm("حذف هذا المشوار؟"))await deleteDoc(doc(db,"rides",id));
+    }else if(a==="rclr"||a==="rall"){
+      const fin=a==="rclr";
+      if(!confirm(fin?"مسح كل المشاوير المنتهية (تم + ملغي)؟":"مسح كل المشاوير حتى المعلقة والمقبولة؟ ما بترجع."))return;
+      const s=await getDocs(fin?query(collection(db,"rides"),where("status","in",["done","cancelled"])):collection(db,"rides"));
+      for(let i=0;i<s.docs.length;i+=400){const w=writeBatch(db);s.docs.slice(i,i+400).forEach(x=>w.delete(x.ref));await w.commit()}
+      alert("تم مسح "+s.docs.length+" مشوار");
     }else if(a==="edit"){
       openEdit(id);
     }else if(a==="pedit"){

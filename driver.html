@@ -45,7 +45,7 @@ a.btn.l{background:var(--foam);color:var(--sea)}
 </style>
 </head>
 <body>
-<header><h1>سندباد</h1><p>تطبيق السواق • أبو حمد • v27</p></header>
+<header><h1>سندباد</h1><p>تطبيق السواق • أبو حمد • v28</p></header>
 <main>
   <section id="auth" class="card hide">
     <h2 id="at">دخول السواق</h2>
@@ -192,14 +192,21 @@ $("ab").onclick=async()=>{
     if(mode==="reg"){
       const name=$("an").value.trim(),plate=$("al").value.trim();
       if(name.length<2||!plate){er.textContent="اكتب الاسم ورقم اللوحة";return}
-      const c=await createUserWithEmailAndPassword(auth,email,pw);
+      let c;
+      try{c=await createUserWithEmailAndPassword(auth,email,pw)}
+      catch(e2){
+        if(e2.code!=="auth/email-already-in-use")throw e2;
+        c=await signInWithEmailAndPassword(auth,email,pw);
+        const ex=await getDoc(doc(db,"drivers",c.user.uid));
+        if(ex.exists()){$("aw").value="";return}
+      }
       let td=15;try{const cs=await getDoc(doc(db,"settings","payment"));if(cs.exists()&&Number(cs.data().trialDays)>=0)td=Number(cs.data().trialDays)}catch(e){}
       await setDoc(doc(db,"drivers",c.user.uid),{name,phone:ph,plate,vehicleType:$("av").value,carModel:$("av").value==="car"?$("md").value:"",active:td>0,trial:td>0,...(td>0?{paidUntil:Timestamp.fromMillis(Date.now()+td*864e5)}:{}),online:false,createdAt:serverTimestamp()});
     }else await signInWithEmailAndPassword(auth,email,pw);
     $("aw").value="";
   }catch(e){
     const m={"auth/email-already-in-use":"الرقم ده مسجل قبل كده، اضغط 'عندي حساب' وادخل","auth/invalid-credential":"الرقم أو كلمة السر غلط","auth/wrong-password":"الرقم أو كلمة السر غلط","auth/user-not-found":"الرقم أو كلمة السر غلط","auth/operation-not-allowed":"فعّل Email/Password في Firebase Authentication","auth/network-request-failed":"تأكد من الإنترنت","auth/too-many-requests":"محاولات كتيرة، استنى شوية وجرب تاني"};
-    er.textContent=m[e.code]||"فشل، حاول تاني";
+    er.textContent=(mode==="reg"&&["auth/invalid-credential","auth/wrong-password"].includes(e.code))?"الرقم مسجل قبل كده بكلمة سر تانية. جرّب كلمة سرك القديمة أو اضغط نسيت كلمة السر":(m[e.code]||"فشل، حاول تاني");
   }finally{$("ab").disabled=false}
 };
 async function logout(){
