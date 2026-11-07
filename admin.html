@@ -4,11 +4,6 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <meta name="theme-color" content="#12263A">
-<link rel="manifest" href="manifest-admin.json">
-<link rel="apple-touch-icon" href="icon-admin-192.png">
-<meta name="mobile-web-app-capable" content="yes">
-<meta name="apple-mobile-web-app-capable" content="yes">
-<script>if("serviceWorker" in navigator)addEventListener("load",function(){navigator.serviceWorker.register("sw.js").catch(function(){})})</script>
 <meta name="robots" content="noindex">
 <title>سندباد - الإدارة</title>
 <link href="https://fonts.googleapis.com/css2?family=Tajawal:wght@400;700;800&display=swap" rel="stylesheet">
@@ -38,17 +33,12 @@ button{font:inherit;cursor:pointer;border:0;border-radius:12px;padding:12px;widt
 .tag.g{background:#d3efe3;color:#0c5a3a}.tag.r{background:#f6d6d3;color:var(--bad)}
 .err{color:var(--bad);font-size:14px;margin-top:6px}
 .hide{display:none}
-.alt{background:var(--foam);color:var(--sea)}
-#em{position:fixed;inset:0;background:#0008;z-index:50;display:flex;align-items:flex-end}
-#em.hide{display:none}
-.sheet{background:#fff;border-radius:20px 20px 0 0;padding:16px;width:100%;max-height:92vh;overflow:auto}
-select{margin-bottom:10px}
 select{width:100%;padding:12px;border:1.5px solid #cfdbe0;border-radius:12px;font:inherit;background:#fff;margin-bottom:10px}
 #map{z-index:0}
 </style>
 </head>
 <body>
-<header><div><h1>سندباد</h1><p>لوحة الإدارة • أبو حمد • v24</p></div><button id="out" class="hide">خروج</button></header>
+<header><div><h1>سندباد</h1><p>لوحة الإدارة • أبو حمد • v19</p></div><button id="out" class="hide">خروج</button></header>
 <main>
   <section id="login" class="card hide">
     <label for="em">الإيميل</label><input id="em" type="email" autocomplete="username">
@@ -87,19 +77,6 @@ select{width:100%;padding:12px;border:1.5px solid #cfdbe0;border-radius:12px;fon
   </section>
 </main>
 
-<div id="em" class="hide"><div class="sheet">
-  <b style="font-size:18px">تعديل بيانات السواق</b>
-  <label for="en">الاسم</label><input id="en">
-  <label for="ep">رقم الهاتف (للاتصال فقط، دخولو بيفضل بالرقم القديم)</label><input id="ep" type="tel" inputmode="tel">
-  <label for="el">رقم اللوحة</label><input id="el">
-  <label for="ev">نوع المركبة</label>
-  <select id="ev"><option value="car">صالون</option><option value="dafar">دفار</option><option value="box">بوكس</option><option value="rickshaw">ركشة</option><option value="bike">موتر</option></select>
-  <div id="emw"><label for="emd">نوع الصالون</label><select id="emd"><option value="">—</option><option>كلك</option><option>فيرنا</option><option>أتس</option><option>أخرى</option></select></div>
-  <label for="ex">تاريخ انتهاء الاشتراك</label><input id="ex" type="date">
-  <label for="ea">حالة الحساب</label><select id="ea"><option value="1">مفعّل</option><option value="0">غير مفعّل</option></select>
-  <button class="ok" id="esv">حفظ التعديل</button>
-  <button class="alt" id="ecn">إلغاء</button>
-</div></div>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.js"></script>
 <script type="module">
 import {initializeApp} from "https://www.gstatic.com/firebasejs/10.14.1/firebase-app.js";
@@ -170,7 +147,6 @@ function rDrv(){
     <div class="mut">ينتهي: ${fd(d.paidUntil)}${d.online?" • متاح الآن":""}</div>
     <button class="ok" data-a="act" data-id="${d.id}">تفعيل / تجديد 30 يوم</button>
     ${d.active?`<button class="no" data-a="off" data-id="${d.id}">إيقاف الحساب</button>`:""}
-    <button class="alt" data-a="edit" data-id="${d.id}">تعديل البيانات</button>
     <button class="no" data-a="rm" data-id="${d.id}">حذف السواق نهائياً</button></div>`}).join("")||'<div class="card mut">ما في سواقين</div>';
 }
 function rRid(){
@@ -183,8 +159,7 @@ const CAT={hood:"حي",food:"مطعم",health:"صحة",market:"سوق",other:"م
 function rPlc(){
   const q=$("pq").value.trim();
   const all=places.filter(p=>!q||String(p.name).includes(q)).sort((a,b)=>String(a.name).localeCompare(String(b.name),"ar")),l=all.slice(0,60);
-  $("pl").innerHTML=(all.length>60?`<div class="card mut">عرض أول 60 من ${all.length}. استخدم البحث.</div>`:"")+l.map(p=>`<div class="card"><div class="sw"><b>${esc(p.name)}</b><span class="tag">${CAT[p.cat]||""}</span></div><button class="alt" data-a="pedit" data-id="${p.id}">تعديل الاسم</button>
-    <button class="no" data-a="del" data-id="${p.id}">حذف</button></div>`).join("")||'<div class="card mut">ما في أماكن مضافة لسه</div>';
+  $("pl").innerHTML=(all.length>60?`<div class="card mut">عرض أول 60 من ${all.length}. استخدم البحث.</div>`:"")+l.map(p=>`<div class="card"><div class="sw"><b>${esc(p.name)}</b><span class="tag">${CAT[p.cat]||""}</span></div><button class="no" data-a="del" data-id="${p.id}">حذف</button></div>`).join("")||'<div class="card mut">ما في أماكن مضافة لسه</div>';
 }
 function initMap(){
   if(!window.L)return;
@@ -317,27 +292,6 @@ async function savePrices(){
     alert("تم حفظ الأسعار ✓");
   }catch(e){alert("فشل الحفظ، حاول تاني")}
 }
-let editId=null;
-function openEdit(id){
-  const d=drivers.find(x=>x.id===id);if(!d)return;
-  editId=id;
-  $("en").value=d.name||"";$("ep").value=d.phone||"";$("el").value=d.plate||"";
-  $("ev").value=d.vehicleType||"car";$("emd").value=d.carModel||"";
-  $("ex").value=d.paidUntil&&d.paidUntil.toMillis?new Date(d.paidUntil.toMillis()).toISOString().slice(0,10):"";
-  $("ea").value=d.active?"1":"0";
-  $("emw").classList.toggle("hide",$("ev").value!=="car");
-  $("em").classList.remove("hide");
-}
-$("ev").onchange=()=>$("emw").classList.toggle("hide",$("ev").value!=="car");
-$("ecn").onclick=()=>$("em").classList.add("hide");
-$("esv").onclick=async()=>{
-  const name=$("en").value.trim(),phone=$("ep").value.trim(),plate=$("el").value.trim();
-  if(name.length<2||!plate){alert("اكتب الاسم ورقم اللوحة");return}
-  const v=$("ev").value,upd={name,phone,plate,vehicleType:v,carModel:v==="car"?$("emd").value:"",active:$("ea").value==="1"};
-  if($("ex").value){const t=new Date($("ex").value+"T23:59:59");if(!isNaN(t))upd.paidUntil=Timestamp.fromMillis(t.getTime())}
-  try{await updateDoc(doc(db,"drivers",editId),upd);$("em").classList.add("hide")}
-  catch(e){alert("فشل الحفظ. تأكد إنك داخل بحساب الإدارة وإنو القواعد منشورة صاح.")}
-};
 $("q").oninput=rDrv;
 
 document.querySelectorAll(".tabs button").forEach(b=>b.onclick=()=>{
@@ -360,11 +314,6 @@ $("panel").onclick=async e=>{
       await w.commit();
     }else if(a==="no"){
       if(confirm("رفض هذه الدفعة؟"))await updateDoc(doc(db,"payments",p),{status:"rejected"});
-    }else if(a==="edit"){
-      openEdit(id);
-    }else if(a==="pedit"){
-      const p=places.find(x=>x.id===id),nn=prompt("الاسم الجديد للمكان",p?p.name:"");
-      if(nn&&nn.trim().length>=2)await updateDoc(doc(db,"places",id),{name:nn.trim()});
     }else if(a==="rm"){
       const d=drivers.find(x=>x.id===id);
       if(!confirm("حذف السواق "+(d?d.name:"")+" نهائياً؟ بيتمسح ملفو ودفعاتو المعلقة، وما بترجع."))return;
