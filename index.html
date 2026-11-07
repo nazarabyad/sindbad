@@ -48,13 +48,13 @@ button{font:inherit;cursor:pointer;border:0;border-radius:12px;padding:14px;widt
 .chip{width:auto;margin:0;padding:8px 14px;font-size:14px}
 #ov{position:fixed;inset:0;background:#fff;z-index:1000;display:flex;flex-direction:column}
 #ov.hide{display:none}
-#nm{flex:1;z-index:0;background:#dfe8ea;min-height:240px}
+#dmap{flex:1;z-index:0;background:#dfe8ea;min-height:240px}
 .price{font-size:19px;font-weight:800;color:var(--sea);text-align:center;margin-top:12px}
 a.call{display:block;background:var(--sea);color:#fff;text-decoration:none;border-radius:12px;padding:14px;font-weight:700;margin-top:10px}
 </style>
 </head>
 <body>
-<header><h1>سندباد</h1><p>أبو حمد • مشوارك يصلك أقرب من ما تتخيل • v26</p></header>
+<header><h1>سندباد</h1><p>أبو حمد • مشوارك يصلك أقرب من ما تتخيل • v29</p></header>
 <main>
   <section id="login" class="card hide">
     <h2>أهلاً بيك، عرّفنا بيك</h2>
@@ -82,7 +82,7 @@ a.call{display:block;background:var(--sea);color:#fff;text-decoration:none;borde
       <div class="loc" id="loc">لسه ما حددنا موقعك</div>
       <div class="loc" id="hint">بعد تحديد موقعك ابحث عن وجهتك بالاسم أو اختار من الأقسام</div>
       <label for="dest">ابحث عن الوجهة بالاسم</label>
-      <div style="display:flex;gap:8px"><input id="dest" placeholder="مثلاً: سوق ابوحمد"><button class="alt" id="sr" style="width:auto;margin:0;padding:0 18px">بحث</button></div>
+      <div style="display:flex;gap:8px"><input id="dest" placeholder="مثلاً: سوق أمدرمان"><button class="alt" id="sr" style="width:auto;margin:0;padding:0 18px">بحث</button></div>
       <div id="res"></div>
       <div style="display:flex;gap:6px;flex-wrap:wrap;margin-top:8px"><button class="alt chip" data-c="hood">الأحياء</button><button class="alt chip" data-c="food">المطاعم</button><button class="alt chip" data-c="health">المستشفيات</button><button class="alt chip" data-c="market">الأسواق</button><button class="alt chip" data-c="other">أماكن تانية</button></div>
       <div class="price" id="price"></div>
@@ -96,7 +96,7 @@ a.call{display:block;background:var(--sea);color:#fff;text-decoration:none;borde
     <div class="big" id="sm"></div>
     <div id="sd" style="color:var(--mut)"></div>
     <div id="call"></div>
-    <button class="alt hide" id="rej">رفض السواق وإعادة الطلب</button>
+    <button class="alt hide" id="rej">رفض هذا السواق وانتظار سواق آخر</button>
     <button class="alt" id="cancel">إلغاء الطلب</button>
     <button class="alt hide" id="again">طلب جديد</button>
   </section>
@@ -104,7 +104,7 @@ a.call{display:block;background:var(--sea);color:#fff;text-decoration:none;borde
 
 <div id="ov" class="hide">
   <div style="padding:12px 14px;background:#12263A;color:#fff;display:flex;justify-content:space-between;align-items:center"><b>السواقين المتاحين الآن</b><button id="ovx" style="width:auto;margin:0;padding:8px 16px;background:#ffffff22;color:#fff">إغلاق</button></div>
-  <div id="nm"></div>
+  <div id="dmap"></div>
   <div id="mst" style="padding:6px 14px;font-size:13px;color:#5d6f7d"></div>
   <div id="lg" style="padding:10px 14px;font-size:14px;display:flex;flex-wrap:wrap;gap:10px"></div>
   <div id="dl" style="max-height:30vh;overflow:auto;padding:0 14px 10px;font-size:14px"></div>
@@ -113,7 +113,7 @@ a.call{display:block;background:var(--sea);color:#fff;text-decoration:none;borde
 <script type="module">
 import {initializeApp} from "https://www.gstatic.com/firebasejs/10.14.1/firebase-app.js";
 import {getAuth,signInAnonymously} from "https://www.gstatic.com/firebasejs/10.14.1/firebase-auth.js";
-import {getFirestore,collection,addDoc,getDoc,getDocs,query,where,arrayUnion,deleteField,doc,updateDoc,onSnapshot,serverTimestamp} from "https://www.gstatic.com/firebasejs/10.14.1/firebase-firestore.js";
+import {getFirestore,collection,addDoc,getDoc,getDocs,query,where,doc,updateDoc,arrayUnion,deleteField,onSnapshot,serverTimestamp} from "https://www.gstatic.com/firebasejs/10.14.1/firebase-firestore.js";
 
 const app=initializeApp({
   apiKey:"AIzaSyBmZP_ZaIOUiZeexQmtPlYVJENJYIk3iME",
@@ -170,7 +170,7 @@ $("send").onclick=async()=>{
 };
 
 function watch(id){
-  show("status");$("again").classList.add("hide");$("rej").classList.add("hide");$("cancel").classList.remove("hide");
+  show("status");$("again").classList.add("hide");$("cancel").classList.remove("hide");
   if(unsub)unsub();
   unsub=onSnapshot(doc(db,"rides",id),s=>{
     if(!s.exists()){reset();return}
@@ -181,17 +181,17 @@ function watch(id){
     $("pl").classList.toggle("hide",d.status!=="pending");
     $("call").innerHTML=d.status==="accepted"&&d.driverPhone?`<a class="call" href="tel:${encodeURIComponent(d.driverPhone)}">اتصل بالسواق</a>`:"";
     const end=d.status==="cancelled"||d.status==="done";
-    $("cancel").classList.toggle("hide",end);$("rej").classList.toggle("hide",d.status!=="accepted");$("again").classList.toggle("hide",!end);
+    $("cancel").classList.toggle("hide",end);$("again").classList.toggle("hide",!end);$("rej").classList.toggle("hide",d.status!=="accepted");
   },()=>reset());
 }
 $("rej").onclick=async()=>{
   const r=ls.get("sb_ride");if(!r)return;
-  if(!confirm("ترفض السواق ده ويرجع طلبك للسواقين التانيين؟"))return;
+  if(!confirm("رفض هذا السواق؟ الطلب بيرجع متاح لسواقين تانيين."))return;
   try{
-    const g=await getDoc(doc(db,"rides",r)),x=g.data();
-    if(!x||x.status!=="accepted"||!x.driverId)return;
-    await updateDoc(doc(db,"rides",r),{status:"pending",createdAt:serverTimestamp(),rejectedBy:arrayUnion(x.driverId),driverId:deleteField(),driverName:deleteField(),driverPhone:deleteField(),driverVehicle:deleteField(),driverPlate:deleteField(),acceptedAt:deleteField()});
-  }catch(e){alert("ما قدرنا نرفض السواق ("+(e.code||e.message)+")")}
+    const s=await getDoc(doc(db,"rides",r)),did=s.exists()?s.data().driverId:null;
+    if(!did)return;
+    await updateDoc(doc(db,"rides",r),{status:"pending",driverId:deleteField(),driverName:deleteField(),driverPhone:deleteField(),driverVehicle:deleteField(),driverPlate:deleteField(),acceptedAt:deleteField(),rejectedDrivers:arrayUnion(did),requeuedAt:serverTimestamp()});
+  }catch(e){alert("فشل الرفض، حاول تاني ("+(e.code||e.message)+")")}
 };
 $("cancel").onclick=()=>{const r=ls.get("sb_ride");if(r)updateDoc(doc(db,"rides",r),{status:"cancelled"})};
 $("again").onclick=reset;
@@ -260,7 +260,7 @@ $("nearby").onclick=()=>{
   $("ov").classList.remove("hide");
   if(!window.L){$("lg").textContent="تعذر تحميل الخريطة، تأكد من الإنترنت";return}
   if(!nmap){
-    nmap=L.map("nm",{maxBounds:AT.b,minZoom:11}).setView(AT.c,13);
+    nmap=L.map("dmap",{maxBounds:AT.b,minZoom:11}).setView(AT.c,13);
     let tl=L.tileLayer("https://tile.openstreetmap.org/{z}/{x}/{y}.png",{maxZoom:19,attribution:"© OpenStreetMap"}).addTo(nmap),errs=0,sw=false;
     $("mst").textContent="جاري تحميل الخريطة...";
     tl.on("tileload",()=>{$("mst").textContent=""});

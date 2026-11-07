@@ -39,8 +39,8 @@ button{font:inherit;cursor:pointer;border:0;border-radius:12px;padding:12px;widt
 .err{color:var(--bad);font-size:14px;margin-top:6px}
 .hide{display:none}
 .alt{background:var(--foam);color:var(--sea)}
-#em{position:fixed;inset:0;background:#0008;z-index:50;display:flex;align-items:flex-end}
-#em.hide{display:none}
+#emod{position:fixed;inset:0;background:#0008;z-index:50;display:flex;align-items:flex-end}
+#emod.hide{display:none}
 .sheet{background:#fff;border-radius:20px 20px 0 0;padding:16px;width:100%;max-height:92vh;overflow:auto}
 select{margin-bottom:10px}
 select{width:100%;padding:12px;border:1.5px solid #cfdbe0;border-radius:12px;font:inherit;background:#fff;margin-bottom:10px}
@@ -48,7 +48,7 @@ select{width:100%;padding:12px;border:1.5px solid #cfdbe0;border-radius:12px;fon
 </style>
 </head>
 <body>
-<header><div><h1>سندباد</h1><p>لوحة الإدارة • أبو حمد • v28</p></div><button id="out" class="hide">خروج</button></header>
+<header><div><h1>سندباد</h1><p>لوحة الإدارة • أبو حمد • v29</p></div><button id="out" class="hide">خروج</button></header>
 <main>
   <section id="login" class="card hide">
     <label for="em">الإيميل</label><input id="em" type="email" autocomplete="username">
@@ -87,7 +87,7 @@ select{width:100%;padding:12px;border:1.5px solid #cfdbe0;border-radius:12px;fon
   </section>
 </main>
 
-<div id="em" class="hide"><div class="sheet">
+<div id="emod" class="hide"><div class="sheet">
   <b style="font-size:18px">تعديل بيانات السواق</b>
   <label for="en">الاسم</label><input id="en">
   <label for="ep">رقم الهاتف (للاتصال فقط، دخولو بيفضل بالرقم القديم)</label><input id="ep" type="tel" inputmode="tel">
@@ -332,16 +332,16 @@ function openEdit(id){
   $("ex").value=d.paidUntil&&d.paidUntil.toMillis?new Date(d.paidUntil.toMillis()).toISOString().slice(0,10):"";
   $("ea").value=d.active?"1":"0";
   $("emw").classList.toggle("hide",$("ev").value!=="car");
-  $("em").classList.remove("hide");
+  $("emod").classList.remove("hide");
 }
 $("ev").onchange=()=>$("emw").classList.toggle("hide",$("ev").value!=="car");
-$("ecn").onclick=()=>$("em").classList.add("hide");
+$("ecn").onclick=()=>$("emod").classList.add("hide");
 $("esv").onclick=async()=>{
   const name=$("en").value.trim(),phone=$("ep").value.trim(),plate=$("el").value.trim();
   if(name.length<2||!plate){alert("اكتب الاسم ورقم اللوحة");return}
   const v=$("ev").value,upd={name,phone,plate,vehicleType:v,carModel:v==="car"?$("emd").value:"",active:$("ea").value==="1"};
   if($("ex").value){const t=new Date($("ex").value+"T23:59:59");if(!isNaN(t))upd.paidUntil=Timestamp.fromMillis(t.getTime())}
-  try{await updateDoc(doc(db,"drivers",editId),upd);$("em").classList.add("hide")}
+  try{await updateDoc(doc(db,"drivers",editId),upd);$("emod").classList.add("hide")}
   catch(e){alert("فشل الحفظ. تأكد إنك داخل بحساب الإدارة وإنو القواعد منشورة صاح.")}
 };
 $("q").oninput=rDrv;
