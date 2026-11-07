@@ -4,116 +4,107 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <meta name="theme-color" content="#12263A">
-<link rel="manifest" href="manifest-customer.json">
-<link rel="apple-touch-icon" href="icon-customer-192.png">
+<link rel="manifest" href="manifest-admin.json">
+<link rel="apple-touch-icon" href="icon-admin-192.png">
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <script>if("serviceWorker" in navigator)addEventListener("load",function(){navigator.serviceWorker.register("sw.js").catch(function(){})})</script>
-<title>سندباد</title>
+<meta name="robots" content="noindex">
+<title>سندباد - الإدارة</title>
 <link href="https://fonts.googleapis.com/css2?family=Tajawal:wght@400;700;800&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/leaflet@1.9.4/dist/leaflet.css">
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.css">
 <style>
-:root{--ink:#12263A;--sea:#0E7C86;--foam:#EAF2F3;--sun:#F2A93B;--card:#fff;--mut:#5d6f7d;--bad:#b3261e}
+:root{--ink:#12263A;--sea:#0E7C86;--foam:#EAF2F3;--sun:#F2A93B;--mut:#5d6f7d;--bad:#b3261e}
 *{box-sizing:border-box;margin:0}
 body{font-family:Tajawal,system-ui,sans-serif;background:var(--foam);color:var(--ink);min-height:100vh}
-header{background:var(--ink);color:#fff;padding:22px 18px 30px;border-radius:0 0 28px 28px}
-header h1{font-size:30px;font-weight:800;letter-spacing:0}
-header p{color:#b9cad6;font-size:14px;margin-top:2px}
-main{padding:16px;margin-top:-16px;max-width:520px;margin-inline:auto}
-.card{background:var(--card);border-radius:18px;padding:16px;margin-bottom:14px;box-shadow:0 2px 10px rgba(18,38,58,.08)}
-h2{font-size:16px;margin-bottom:10px}
+header{background:var(--ink);color:#fff;padding:18px 18px 26px;border-radius:0 0 26px 26px;display:flex;justify-content:space-between;align-items:center}
+header h1{font-size:26px;font-weight:800}header p{color:#b9cad6;font-size:14px}
+header button{width:auto;padding:8px 16px;background:#ffffff22;color:#fff;margin:0}
+main{padding:14px;margin-top:-12px;max-width:560px;margin-inline:auto}
+.card{background:#fff;border-radius:16px;padding:14px;margin-bottom:10px;box-shadow:0 2px 10px rgba(18,38,58,.08);line-height:1.7}
 label{display:block;font-size:14px;color:var(--mut);margin:10px 0 4px}
-input{width:100%;padding:13px;border:1.5px solid #cfdbe0;border-radius:12px;font:inherit;background:#fff}
-input:focus{outline:3px solid rgba(14,124,134,.35);border-color:var(--sea)}
-button{font:inherit;cursor:pointer;border:0;border-radius:12px;padding:14px;width:100%;font-weight:700}
-.go{background:var(--sun);color:var(--ink);font-size:17px;margin-top:14px}
-.go:disabled{opacity:.5}
-.alt{background:var(--foam);color:var(--sea);margin-top:8px}
-.types{display:grid;grid-template-columns:repeat(3,1fr);gap:8px}
-.t{background:var(--foam);border:2px solid transparent;color:var(--ink);padding:14px 4px;font-size:15px}
-.t span{display:block;font-size:30px;margin-bottom:4px}
-.t.on{border-color:var(--sea);background:#fff;box-shadow:0 0 0 3px rgba(14,124,134,.18)}
-.loc{font-size:14px;color:var(--mut);margin-top:8px}
-.loc.ok{color:var(--sea);font-weight:700}
-.st{text-align:center}
-.st .big{font-size:20px;font-weight:800;margin:6px 0}
-.pulse{width:14px;height:14px;border-radius:50%;background:var(--sun);display:inline-block;animation:p 1.2s infinite}
-@keyframes p{50%{transform:scale(1.6);opacity:.4}}
-@media (prefers-reduced-motion:reduce){.pulse{animation:none}}
-.err{color:var(--bad);font-size:14px;margin-top:8px}
+input{width:100%;padding:12px;border:1.5px solid #cfdbe0;border-radius:12px;font:inherit;background:#fff;margin-bottom:10px}
+input:focus{outline:3px solid rgba(14,124,134,.35)}
+button{font:inherit;cursor:pointer;border:0;border-radius:12px;padding:12px;width:100%;font-weight:700;margin-top:8px}
+.go{background:var(--sun);color:var(--ink)}
+.ok{background:var(--sea);color:#fff}
+.no{background:#f6d6d3;color:var(--bad)}
+.tabs{display:flex;gap:6px;margin-bottom:10px}
+.tabs button{margin:0;background:#fff;color:var(--ink);padding:10px 2px;font-size:13px}
+.tabs button.on{background:var(--ink);color:#fff}
+.sw{display:flex;justify-content:space-between;align-items:center;gap:8px}
+.mut{color:var(--mut);font-size:14px}
+.tag{font-size:12px;padding:3px 10px;border-radius:99px;background:#cfdbe0;white-space:nowrap}
+.tag.g{background:#d3efe3;color:#0c5a3a}.tag.r{background:#f6d6d3;color:var(--bad)}
+.err{color:var(--bad);font-size:14px;margin-top:6px}
 .hide{display:none}
-#map{height:260px;border-radius:12px;margin-top:10px;z-index:0}
-#res button{background:#fff;border:1px solid #cfdbe0;color:var(--ink);text-align:right;margin-top:6px;font-weight:400;padding:10px;font-size:14px}
-.chip{width:auto;margin:0;padding:8px 14px;font-size:14px}
-#ov{position:fixed;inset:0;background:#fff;z-index:1000;display:flex;flex-direction:column}
-#ov.hide{display:none}
-#nm{flex:1;z-index:0;background:#dfe8ea;min-height:240px}
-.price{font-size:19px;font-weight:800;color:var(--sea);text-align:center;margin-top:12px}
-a.call{display:block;background:var(--sea);color:#fff;text-decoration:none;border-radius:12px;padding:14px;font-weight:700;margin-top:10px}
+.alt{background:var(--foam);color:var(--sea)}
+#em{position:fixed;inset:0;background:#0008;z-index:50;display:flex;align-items:flex-end}
+#em.hide{display:none}
+.sheet{background:#fff;border-radius:20px 20px 0 0;padding:16px;width:100%;max-height:92vh;overflow:auto}
+select{margin-bottom:10px}
+select{width:100%;padding:12px;border:1.5px solid #cfdbe0;border-radius:12px;font:inherit;background:#fff;margin-bottom:10px}
+#map{z-index:0}
 </style>
 </head>
 <body>
-<header><h1>سندباد</h1><p>أبو حمد • مشوارك يصلك أقرب من ما تتخيل • v26</p></header>
+<header><div><h1>سندباد</h1><p>لوحة الإدارة • أبو حمد • v24</p></div><button id="out" class="hide">خروج</button></header>
 <main>
   <section id="login" class="card hide">
-    <h2>أهلاً بيك، عرّفنا بيك</h2>
-    <label for="nm">الاسم</label><input id="nm" autocomplete="name">
-    <label for="ph">رقم التلفون</label><input id="ph" type="tel" inputmode="tel" autocomplete="tel" placeholder="09XXXXXXXX">
-    <button class="go" id="enter">دخول</button>
-    <div class="err" id="e1"></div>
+    <label for="em">الإيميل</label><input id="em" type="email" autocomplete="username">
+    <label for="pw">كلمة السر</label><input id="pw" type="password" autocomplete="current-password">
+    <button class="go" id="lb">دخول</button><div class="err" id="er"></div>
   </section>
 
-  <section id="order" class="hide">
-    <div class="card">
-      <h2>اختار المركبة</h2>
-      <div class="types">
-        <button class="t on" data-t="car"><span>🚗</span>صالون</button>
-        <button class="t" data-t="dafar"><span>🚚</span>دفار</button>
-        <button class="t" data-t="box"><span>🛻</span>بوكس</button>
-        <button class="t" data-t="rickshaw"><span>🛺</span>ركشة</button>
-        <button class="t" data-t="bike"><span>🏍️</span>موتر</button>
+  <section id="panel" class="hide">
+    <div class="tabs">
+      <button data-t="pay" class="on">الدفعات <span id="pc"></span></button>
+      <button data-t="drv">السواق</button>
+      <button data-t="rid">المشاوير</button>
+      <button data-t="plc">الأماكن</button>
+      <button data-t="prcw">الأسعار</button>
+    </div>
+    <div id="pay"></div>
+    <div id="drv" class="hide"><input id="q" placeholder="ابحث بالاسم أو الرقم"><div id="dl"></div></div>
+    <div id="rid" class="hide"></div>
+    <div id="prcw" class="hide"><div id="prc"></div></div>
+    <div id="plc" class="hide">
+      <div class="card"><b>استيراد من الخريطة العامة</b>
+        <div class="mut">يجلب الأحياء والمطاعم والمستشفيات والأسواق وغيرها المسجلة في أبو حمد، وتختار شنو تحفظ.</div>
+        <button class="go" id="rep">استبدال كل الأماكن بأماكن أبو حمد (بضغطة)</button>
+        <button class="ok" id="imp">جلب الأماكن من الخريطة</button><div id="il" style="margin-top:8px"></div>
+        <button class="no" id="clr">مسح الأماكن المستوردة القديمة</button>
       </div>
-      <button class="alt" id="nearby">شوف السواقين المتاحين على الخريطة</button>
+      <div class="card">
+        <div id="map" style="height:260px;border-radius:12px"></div>
+        <div class="mut" id="ph" style="margin:8px 0">اضغط على الخريطة في مكان الحي أو المطعم</div>
+        <input id="pn" placeholder="اسم المكان">
+        <select id="pcat"><option value="hood">حي</option><option value="food">مطعم</option><option value="health">مستشفى/صحة</option><option value="market">سوق</option><option value="other">مكان آخر</option></select>
+        <button class="ok" id="pa">إضافة المكان</button>
+      </div>
+      <input id="pq" placeholder="ابحث في الأماكن المضافة"><div id="pl"></div>
     </div>
-    <div class="card">
-      <h2>موقعك</h2>
-      <button class="alt" id="gps" style="margin-top:0">حدد موقعي الحالي</button>
-      <div class="loc" id="loc">لسه ما حددنا موقعك</div>
-      <div class="loc" id="hint">بعد تحديد موقعك ابحث عن وجهتك بالاسم أو اختار من الأقسام</div>
-      <label for="dest">ابحث عن الوجهة بالاسم</label>
-      <div style="display:flex;gap:8px"><input id="dest" placeholder="مثلاً: سوق أمدرمان"><button class="alt" id="sr" style="width:auto;margin:0;padding:0 18px">بحث</button></div>
-      <div id="res"></div>
-      <div style="display:flex;gap:6px;flex-wrap:wrap;margin-top:8px"><button class="alt chip" data-c="hood">الأحياء</button><button class="alt chip" data-c="food">المطاعم</button><button class="alt chip" data-c="health">المستشفيات</button><button class="alt chip" data-c="market">الأسواق</button><button class="alt chip" data-c="other">أماكن تانية</button></div>
-      <div class="price" id="price"></div>
-      <button class="go" id="send" disabled>اطلب المشوار</button>
-      <div class="err" id="e2"></div>
-    </div>
-  </section>
-
-  <section id="status" class="card st hide">
-    <span class="pulse" id="pl"></span>
-    <div class="big" id="sm"></div>
-    <div id="sd" style="color:var(--mut)"></div>
-    <div id="call"></div>
-    <button class="alt hide" id="rej">رفض السواق وإعادة الطلب</button>
-    <button class="alt" id="cancel">إلغاء الطلب</button>
-    <button class="alt hide" id="again">طلب جديد</button>
   </section>
 </main>
 
-<div id="ov" class="hide">
-  <div style="padding:12px 14px;background:#12263A;color:#fff;display:flex;justify-content:space-between;align-items:center"><b>السواقين المتاحين الآن</b><button id="ovx" style="width:auto;margin:0;padding:8px 16px;background:#ffffff22;color:#fff">إغلاق</button></div>
-  <div id="nm"></div>
-  <div id="mst" style="padding:6px 14px;font-size:13px;color:#5d6f7d"></div>
-  <div id="lg" style="padding:10px 14px;font-size:14px;display:flex;flex-wrap:wrap;gap:10px"></div>
-  <div id="dl" style="max-height:30vh;overflow:auto;padding:0 14px 10px;font-size:14px"></div>
-</div>
-<script src="https://cdn.jsdelivr.net/npm/leaflet@1.9.4/dist/leaflet.js" onerror="var x=document.createElement('script');x.src='https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.js';document.head.appendChild(x)"></script>
+<div id="em" class="hide"><div class="sheet">
+  <b style="font-size:18px">تعديل بيانات السواق</b>
+  <label for="en">الاسم</label><input id="en">
+  <label for="ep">رقم الهاتف (للاتصال فقط، دخولو بيفضل بالرقم القديم)</label><input id="ep" type="tel" inputmode="tel">
+  <label for="el">رقم اللوحة</label><input id="el">
+  <label for="ev">نوع المركبة</label>
+  <select id="ev"><option value="car">صالون</option><option value="dafar">دفار</option><option value="box">بوكس</option><option value="rickshaw">ركشة</option><option value="bike">موتر</option></select>
+  <div id="emw"><label for="emd">نوع الصالون</label><select id="emd"><option value="">—</option><option>كلك</option><option>فيرنا</option><option>أتس</option><option>أخرى</option></select></div>
+  <label for="ex">تاريخ انتهاء الاشتراك</label><input id="ex" type="date">
+  <label for="ea">حالة الحساب</label><select id="ea"><option value="1">مفعّل</option><option value="0">غير مفعّل</option></select>
+  <button class="ok" id="esv">حفظ التعديل</button>
+  <button class="alt" id="ecn">إلغاء</button>
+</div></div>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.js"></script>
 <script type="module">
 import {initializeApp} from "https://www.gstatic.com/firebasejs/10.14.1/firebase-app.js";
-import {getAuth,signInAnonymously} from "https://www.gstatic.com/firebasejs/10.14.1/firebase-auth.js";
-import {getFirestore,collection,addDoc,getDoc,getDocs,query,where,arrayUnion,deleteField,doc,updateDoc,onSnapshot,serverTimestamp} from "https://www.gstatic.com/firebasejs/10.14.1/firebase-firestore.js";
+import {getAuth,signInWithEmailAndPassword,signOut,onAuthStateChanged} from "https://www.gstatic.com/firebasejs/10.14.1/firebase-auth.js";
+import {getFirestore,collection,doc,onSnapshot,query,where,orderBy,limit,writeBatch,updateDoc,addDoc,deleteDoc,setDoc,Timestamp,serverTimestamp} from "https://www.gstatic.com/firebasejs/10.14.1/firebase-firestore.js";
 
 const app=initializeApp({
   apiKey:"AIzaSyBmZP_ZaIOUiZeexQmtPlYVJENJYIk3iME",
@@ -125,178 +116,269 @@ const app=initializeApp({
 });
 const auth=getAuth(app),db=getFirestore(app);
 const $=id=>document.getElementById(id);
-const show=(...ids)=>["login","order","status"].forEach(i=>$(i).classList.toggle("hide",!ids.includes(i)));
-const ls={get:k=>{try{return localStorage.getItem(k)}catch(e){return null}},set:(k,v)=>{try{localStorage.setItem(k,v)}catch(e){}},del:k=>{try{localStorage.removeItem(k)}catch(e){}}};
-let user=null,type="car",pos=null,unsub=null,destPt=null,map=null,mk=null,meMk=null,quote=null,cfg={},places=[];
+const VN={car:"صالون",dafar:"دفار",box:"بوكس",rickshaw:"ركشة",bike:"موتر"},ST={pending:"بانتظار",accepted:"مقبول",done:"تم",cancelled:"ملغي"};
+const esc=s=>String(s??"").replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
+const fd=t=>t&&t.toMillis?new Date(t.toMillis()).toLocaleDateString("en-GB"):"—";
+const num=n=>Number(n||0).toLocaleString("en-US");
+let drivers=[],pays=[],rides=[],places=[],unsubs=[],map=null,pt=null,mk=null;
 
-async function start(){
-  try{await signInAnonymously(auth)}catch(e){$("e1").textContent="تعذر الاتصال، تأكد من الإنترنت وفعّل Anonymous في Authentication";}
-  await loadCfg();
-  const n=ls.get("sb_name"),p=ls.get("sb_phone");
-  if(n&&p){user={name:n,phone:p};const r=ls.get("sb_ride");r?watch(r):show("order")}else show("login");
-}
-
-$("enter").onclick=()=>{
-  const name=$("nm").value.trim(),phone=$("ph").value.trim();
-  if(name.length<2||phone.replace(/\D/g,"").length<9){$("e1").textContent="اكتب اسمك ورقم تلفونك صاح";return}
-  ls.set("sb_name",name);ls.set("sb_phone",phone);user={name,phone};show("order");
-};
-
-document.querySelectorAll(".t").forEach(b=>b.onclick=()=>{
-  type=b.dataset.t;document.querySelectorAll(".t").forEach(x=>x.classList.toggle("on",x===b));calc();
+onAuthStateChanged(auth,u=>{
+  unsubs.forEach(f=>f());unsubs=[];
+  const bad=!u||u.isAnonymous||(u.email||"").endsWith("@sindbad.invalid");
+  if(u&&bad){$("er").textContent="هذا الحساب ليس حساب إدارة";signOut(auth);return}
+  $("login").classList.toggle("hide",!bad);$("panel").classList.toggle("hide",bad);$("out").classList.toggle("hide",bad);
+  if(!bad)start();
 });
-
-$("gps").onclick=()=>{
-  $("loc").className="loc";$("loc").textContent="بنحدد موقعك...";
-  if(!navigator.geolocation){$("loc").textContent="المتصفح ما بدعم تحديد الموقع";return}
-  navigator.geolocation.getCurrentPosition(p=>{
-    pos={lat:p.coords.latitude,lng:p.coords.longitude};
-    $("loc").className="loc ok";$("loc").textContent="تم تحديد موقعك ✓";initMap();calc();
-  },()=>{$("loc").textContent="ما قدرنا نحدد الموقع. فعّل الـ GPS واسمح للمتصفح بالوصول للموقع"},{enableHighAccuracy:true,timeout:15000});
+$("lb").onclick=async()=>{
+  $("er").textContent="";
+  try{await signInWithEmailAndPassword(auth,$("em").value.trim(),$("pw").value)}
+  catch(e){$("er").textContent="الإيميل أو كلمة السر غلط"}
 };
+$("out").onclick=()=>signOut(auth);
 
-$("send").onclick=async()=>{
-  const dest=$("dest").value.trim()||"وجهة على الخريطة";
-  if(!pos||!destPt||!quote){$("e2").textContent="حدد موقعك ووجهتك على الخريطة";return}
-  $("send").disabled=true;$("e2").textContent="";
-  try{
-    if(!auth.currentUser)await signInAnonymously(auth);
-    const r=await addDoc(collection(db,"rides"),{
-      customerUid:auth.currentUser.uid,customerName:user.name,customerPhone:user.phone,vehicleType:type,
-      lat:pos.lat,lng:pos.lng,destination:dest,destLat:destPt.lat,destLng:destPt.lng,distanceKm:quote.distanceKm,price:quote.price,status:"pending",createdAt:serverTimestamp()
-    });
-    ls.set("sb_ride",r.id);watch(r.id);
-  }catch(e){$("e2").textContent="فشل إرسال الطلب ("+(e.code||e.message)+")";$("send").disabled=false}
-};
-
-function watch(id){
-  show("status");$("again").classList.add("hide");$("rej").classList.add("hide");$("cancel").classList.remove("hide");
-  if(unsub)unsub();
-  unsub=onSnapshot(doc(db,"rides",id),s=>{
-    if(!s.exists()){reset();return}
-    const d=s.data(),m={pending:["بنبحث ليك عن أقرب سواق","الطلب وصل للسواقين القريبين منك"],
-      accepted:["السواق قبل طلبك ✓",(d.driverName||"السواق")+(d.driverVehicle?" • "+d.driverVehicle:"")+(d.driverPlate?" • لوحة "+d.driverPlate:"")+" في الطريق ليك"],
-      cancelled:["اتلغى الطلب",""],done:["وصلت بالسلامة",""]}[d.status]||["",""];
-    $("sm").textContent=m[0];$("sd").textContent=m[1]+(d.price?" • "+Number(d.price).toLocaleString("en-US")+" جنيه":"");
-    $("pl").classList.toggle("hide",d.status!=="pending");
-    $("call").innerHTML=d.status==="accepted"&&d.driverPhone?`<a class="call" href="tel:${encodeURIComponent(d.driverPhone)}">اتصل بالسواق</a>`:"";
-    const end=d.status==="cancelled"||d.status==="done";
-    $("cancel").classList.toggle("hide",end);$("rej").classList.toggle("hide",d.status!=="accepted");$("again").classList.toggle("hide",!end);
-  },()=>reset());
+function start(){
+  const fail=()=>{$("pay").innerHTML='<div class="card err">تعذر تحميل البيانات. تأكد من الإنترنت.</div>'};
+  unsubs.push(onSnapshot(collection(db,"drivers"),s=>{drivers=s.docs.map(d=>({id:d.id,...d.data()}));rDrv();rPay()},fail));
+  unsubs.push(onSnapshot(query(collection(db,"payments"),where("status","==","pending")),s=>{
+    pays=s.docs.map(d=>({id:d.id,...d.data()})).sort((a,b)=>(a.createdAt?.toMillis?.()||0)-(b.createdAt?.toMillis?.()||0));rPay();
+  },fail));
+  unsubs.push(onSnapshot(query(collection(db,"rides"),orderBy("createdAt","desc"),limit(20)),s=>{rides=s.docs.map(d=>({id:d.id,...d.data()}));rRid()},fail));
+  unsubs.push(onSnapshot(collection(db,"places"),s=>{places=s.docs.map(d=>({id:d.id,...d.data()}));rPlc()},fail));
+  unsubs.push(onSnapshot(doc(db,"settings","pricing"),s=>{prc=s.exists()?s.data():{};rPrice()}));
+  unsubs.push(onSnapshot(doc(db,"settings","payment"),s=>{pay0=s.exists()?s.data():{};rPrice()}));
 }
-$("rej").onclick=async()=>{
-  const r=ls.get("sb_ride");if(!r)return;
-  if(!confirm("ترفض السواق ده ويرجع طلبك للسواقين التانيين؟"))return;
-  try{
-    const g=await getDoc(doc(db,"rides",r)),x=g.data();
-    if(!x||x.status!=="accepted"||!x.driverId)return;
-    await updateDoc(doc(db,"rides",r),{status:"pending",createdAt:serverTimestamp(),rejectedBy:arrayUnion(x.driverId),driverId:deleteField(),driverName:deleteField(),driverPhone:deleteField(),driverVehicle:deleteField(),driverPlate:deleteField(),acceptedAt:deleteField()});
-  }catch(e){alert("ما قدرنا نرفض السواق ("+(e.code||e.message)+")")}
-};
-$("cancel").onclick=()=>{const r=ls.get("sb_ride");if(r)updateDoc(doc(db,"rides",r),{status:"cancelled"})};
-$("again").onclick=reset;
-function reset(){if(unsub)unsub();ls.del("sb_ride");pos=null;destPt=null;quote=null;if(mk&&map){map.removeLayer(mk);mk=null}$("price").textContent="";$("res").innerHTML="";$("send").disabled=true;$("dest").value="";$("loc").className="loc";$("loc").textContent="لسه ما حددنا موقعك";show("order")}
 
-const DEF={car:6000,rickshaw:4000,bike:2000,dafar:0,box:0},KEY={car:"priceKmCar",rickshaw:"priceKmRickshaw",bike:"priceKmBike",dafar:"priceKmDafar",box:"priceKmBox"};
-const BASE={car:"baseCar",dafar:"baseDafar",box:"baseBox",rickshaw:"baseRickshaw",bike:"baseBike"};
-async function loadCfg(){
-  try{const x=await getDoc(doc(db,"settings","pricing"));cfg=x.exists()?x.data():{}}catch(e){cfg={}}
-  try{const q=await getDocs(collection(db,"places"));places=q.docs.map(d=>d.data()).filter(p=>p.name&&isFinite(p.lat)&&isFinite(p.lng))}catch(e){places=[]}
+function rPay(){
+  $("pc").textContent=pays.length?"("+pays.length+")":"";
+  $("pay").innerHTML=pays.length?pays.map(p=>{
+    const d=drivers.find(x=>x.id===p.driverId)||{};
+    return `<div class="card"><div class="sw"><b>${esc(p.driverName)}</b><span class="mut" dir="ltr">${esc(p.driverPhone)}</span></div>
+    <div class="mut">${VN[d.vehicleType]||""}${d.carModel?" "+esc(d.carModel):""} • لوحة ${esc(d.plate)}</div>
+    <div>المبلغ: <b>${num(p.amount)}</b> جنيه</div>
+    <div>رقم العملية: <b dir="ltr">${esc(p.ref)}</b></div>
+    <div>المحوِّل: ${esc(p.payerName)} <span class="mut">• ${fd(p.createdAt)}</span></div>
+    <button class="ok" data-a="ok" data-id="${p.driverId}" data-p="${p.id}">تأكيد وتفعيل 30 يوم</button>
+    <button class="no" data-a="no" data-p="${p.id}">رفض</button></div>`}).join(""):'<div class="card mut">ما في دفعات معلقة</div>';
 }
-const AT={n:"أبو حمد",c:[19.5402,33.3252],b:[[19.46,33.24],[19.62,33.42]]};
-function km(a,b,c,d){const r=x=>x*Math.PI/180,h=Math.sin(r(c-a)/2)**2+Math.cos(r(a))*Math.cos(r(c))*Math.sin(r(d-b)/2)**2;return 12742*Math.asin(Math.sqrt(h))}
-function calc(){
-  if(!pos||!destPt){quote=null;$("price").textContent="";$("send").disabled=true;return}
-  const d=Math.max(0.1,km(pos.lat,pos.lng,destPt.lat,destPt.lng)*(Number(cfg.roadFactor)||1.3));
-  const rate=Number(cfg[KEY[type]])||DEF[type];
-  if(!rate){quote=null;$("price").textContent="سعر هذا النوع غير محدد بعد";$("send").disabled=true;return}
-  const base=Number(cfg[BASE[type]])||10000,raw=d<=1?base:base+(d-1)*rate,p=Math.max(500,Math.round(raw/500)*500);
-  quote={distanceKm:Math.round(d*10)/10,price:p};
-  $("price").textContent="السعر التقديري: "+p.toLocaleString("en-US")+" جنيه ("+quote.distanceKm+" كم)";
-  $("send").disabled=false;
+function rDrv(){
+  const q=$("q").value.trim();
+  const l=drivers.filter(d=>!q||(d.name||"").includes(q)||(d.phone||"").includes(q));
+  $("dl").innerHTML=l.map(d=>{
+    const exp=d.paidUntil&&d.paidUntil.toMillis()<Date.now(),st=!d.active?"غير مفعّل":exp?"منتهي":"مفعّل";
+    return `<div class="card"><div class="sw"><b>${esc(d.name)}</b><span class="tag ${st==="مفعّل"?"g":"r"}">${st==="مفعّل"&&d.trial?"تجربة مجانية":st}</span></div>
+    <div class="mut"><span dir="ltr">${esc(d.phone)}</span> • ${VN[d.vehicleType]||""}${d.carModel?" "+esc(d.carModel):""} • لوحة ${esc(d.plate)}</div>
+    <div class="mut">ينتهي: ${fd(d.paidUntil)}${d.online?" • متاح الآن":""}</div>
+    <button class="ok" data-a="act" data-id="${d.id}">تفعيل / تجديد 30 يوم</button>
+    ${d.active?`<button class="no" data-a="off" data-id="${d.id}">إيقاف الحساب</button>`:""}
+    <button class="alt" data-a="edit" data-id="${d.id}">تعديل البيانات</button>
+    <button class="no" data-a="rm" data-id="${d.id}">حذف السواق نهائياً</button></div>`}).join("")||'<div class="card mut">ما في سواقين</div>';
+}
+function rRid(){
+  $("rid").innerHTML=`<div class="card mut">آخر ${rides.length} مشوار</div>`+rides.map(r=>`<div class="card"><div class="sw"><b>${esc(r.customerName)}</b><span class="tag">${ST[r.status]||esc(r.status)}</span></div>
+  <div class="mut">${VN[r.vehicleType]||""} • ${r.price?num(r.price)+" جنيه":"—"} • ${r.distanceKm||"—"} كم</div>
+  <div class="mut">الوجهة: ${esc(r.destination)}${r.driverName?" • السواق: "+esc(r.driverName):""}</div></div>`).join("");
+}
+const CITY={n:"أبو حمد",c:[19.5402,33.3252],b:[[19.46,33.24],[19.62,33.42]]};
+const CAT={hood:"حي",food:"مطعم",health:"صحة",market:"سوق",other:"مكان آخر"};
+function rPlc(){
+  const q=$("pq").value.trim();
+  const all=places.filter(p=>!q||String(p.name).includes(q)).sort((a,b)=>String(a.name).localeCompare(String(b.name),"ar")),l=all.slice(0,60);
+  $("pl").innerHTML=(all.length>60?`<div class="card mut">عرض أول 60 من ${all.length}. استخدم البحث.</div>`:"")+l.map(p=>`<div class="card"><div class="sw"><b>${esc(p.name)}</b><span class="tag">${CAT[p.cat]||""}</span></div><button class="alt" data-a="pedit" data-id="${p.id}">تعديل الاسم</button>
+    <button class="no" data-a="del" data-id="${p.id}">حذف</button></div>`).join("")||'<div class="card mut">ما في أماكن مضافة لسه</div>';
 }
 function initMap(){
-  const inAt=pos.lat>=AT.b[0][0]&&pos.lat<=AT.b[1][0]&&pos.lng>=AT.b[0][1]&&pos.lng<=AT.b[1][1];
-  $("hint").textContent=inAt?"ابحث عن وجهتك بالاسم أو اختار من الأقسام":"موقعك خارج "+AT.n+". الخدمة حالياً داخل "+AT.n+" فقط.";
-}
-
-function esc(t){return String(t||"").replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]))}
-function setDest(lat,lng,name){
-  destPt={lat,lng};
-  if(map){const ll=[lat,lng];if(mk)mk.setLatLng(ll);else mk=L.marker(ll).addTo(map);map.setView(ll,15)}
-  if(name)$("dest").value=name;
-  $("res").innerHTML="";calc();
-}
-const CAT={hood:"حي",food:"مطعم",health:"صحة",market:"سوق",other:"مكان"};
-const item=p=>({name:p.name,lat:p.lat,lng:p.lng,sub:CAT[p.cat]||""});
-function showList(items){
-  $("res").innerHTML=items.map((x,i)=>`<button data-i="${i}">${esc(x.name)} <span class="loc">${esc(x.sub)}</span></button>`).join("");
-  document.querySelectorAll("#res button").forEach(b=>b.onclick=()=>{const x=items[b.dataset.i];setDest(x.lat,x.lng,x.name)});
-}
-document.querySelectorAll(".chip").forEach(b=>b.onclick=()=>{
-  const l=places.filter(p=>p.cat===b.dataset.c).map(item);
-  if(l.length)showList(l);else $("res").innerHTML='<div class="loc">ما في أماكن مضافة في القسم ده لسه</div>';
-});
-async function search(){
-  const q=$("dest").value.trim();
-  if(q.length<2){$("res").innerHTML="";return}
-  const local=places.filter(p=>p.name.includes(q)).map(item);
-  if(local.length)showList(local);else $("res").innerHTML='<div class="loc">جاري البحث...</div>';
-  let extra=[];
-  try{
-    const u="https://nominatim.openstreetmap.org/search?format=jsonv2&limit=6&bounded=1&accept-language=ar&q="+encodeURIComponent(q)+"&viewbox="+[AT.b[0][1],AT.b[1][0],AT.b[1][1],AT.b[0][0]].join(",");
-    const r=await (await fetch(u)).json();
-    extra=r.map(x=>({name:x.name||x.display_name.split("،")[0],lat:parseFloat(x.lat),lng:parseFloat(x.lon),sub:"خريطة"}));
-  }catch(e){}
-  const all=local.concat(extra);
-  if(all.length)showList(all);else $("res").innerHTML='<div class="loc">ما لقينا المكان. جرّب اسم تاني أو اختار من الأقسام.</div>';
-}
-$("sr").onclick=search;
-$("dest").addEventListener("keydown",e=>{if(e.key==="Enter")search()});
-
-const COL={car:"#0E7C86",dafar:"#7a4fb5",box:"#c0561f",rickshaw:"#F2A93B",bike:"#b3261e"},NM={car:"صالون",dafar:"دفار",box:"بوكس",rickshaw:"ركشة",bike:"موتر"};
-let nmap=null,layer=null,unNear=null,meDot=null,vp=null;
-$("nearby").onclick=()=>{
-  $("ov").classList.remove("hide");
-  if(!window.L){$("lg").textContent="تعذر تحميل الخريطة، تأكد من الإنترنت";return}
-  if(!nmap){
-    nmap=L.map("nm",{maxBounds:AT.b,minZoom:11}).setView(AT.c,13);
-    let tl=L.tileLayer("https://tile.openstreetmap.org/{z}/{x}/{y}.png",{maxZoom:19,attribution:"© OpenStreetMap"}).addTo(nmap),errs=0,sw=false;
-    $("mst").textContent="جاري تحميل الخريطة...";
-    tl.on("tileload",()=>{$("mst").textContent=""});
-    tl.on("tileerror",()=>{
-      if(++errs<4||sw)return;sw=true;nmap.removeLayer(tl);errs=0;
-      tl=L.tileLayer("https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png",{maxZoom:19,subdomains:"abcd",attribution:"© OpenStreetMap © CARTO"}).addTo(nmap);
-      tl.on("tileload",()=>{$("mst").textContent=""});
-      tl.on("tileerror",()=>{if(++errs===6)$("mst").textContent="تعذر تحميل خلفية الخريطة. القائمة تحت بتوريك السواقين والمسافة."});
-    });
-    layer=L.layerGroup().addTo(nmap);
+  if(!window.L)return;
+  if(!map){
+    map=L.map("map",{maxBounds:CITY.b,minZoom:11}).setView(CITY.c,14);
+    L.tileLayer("https://tile.openstreetmap.org/{z}/{x}/{y}.png",{maxZoom:19,attribution:"© OpenStreetMap"}).addTo(map);
+    map.on("click",e=>{pt=e.latlng;if(mk)mk.setLatLng(e.latlng);else mk=L.marker(e.latlng).addTo(map);$("ph").textContent="تم اختيار الموقع، اكتب الاسم واضغط إضافة"});
   }
-  if(pos){
-    const inAt=pos.lat>=AT.b[0][0]&&pos.lat<=AT.b[1][0]&&pos.lng>=AT.b[0][1]&&pos.lng<=AT.b[1][1];
-    nmap.setView(inAt?[pos.lat,pos.lng]:AT.c,14);
-    if(meDot)meDot.setLatLng([pos.lat,pos.lng]);else meDot=L.circleMarker([pos.lat,pos.lng],{radius:7,color:"#12263A",weight:3,fillColor:"#fff",fillOpacity:1}).addTo(nmap).bindTooltip("موقعك");
-  }
-  setTimeout(()=>nmap.invalidateSize(),150);
-  if(!pos&&navigator.geolocation)navigator.geolocation.getCurrentPosition(p=>{vp={lat:p.coords.latitude,lng:p.coords.longitude}},()=>{},{timeout:10000,maximumAge:120000});
-  if(unNear)unNear();
-  unNear=onSnapshot(query(collection(db,"driverLocations"),where("online","==",true)),s=>{
-    layer.clearLayers();const cnt={},items=[];
-    s.docs.forEach(x=>{
-      const v=x.data(),t=v.updatedAt&&v.updatedAt.toMillis?v.updatedAt.toMillis():Date.now();
-      if(Date.now()-t>180000||!isFinite(v.lat)||!isFinite(v.lng)||!COL[v.vehicleType])return;
-      cnt[v.vehicleType]=(cnt[v.vehicleType]||0)+1;items.push(v);
-      L.circleMarker([v.lat,v.lng],{radius:9,color:"#fff",weight:2,fillColor:COL[v.vehicleType],fillOpacity:1}).addTo(layer).bindTooltip(NM[v.vehicleType]);
-    });
-    const tot=Object.values(cnt).reduce((a,b)=>a+b,0),me=pos||vp;
-    const rows=items.map(v=>({t:v.vehicleType,d:me?km(me.lat,me.lng,v.lat,v.lng):null})).sort((a,b)=>(a.d==null?1e9:a.d)-(b.d==null?1e9:b.d)).slice(0,10);
-    $("dl").innerHTML=rows.map(r=>`<div style="padding:8px 0;border-top:1px solid #eee"><b style="color:${COL[r.t]}">●</b> ${NM[r.t]}${r.d!=null?" • "+(r.d<1?Math.round(r.d*1000)+" م":r.d.toFixed(1)+" كم")+" منك":""}</div>`).join("")+(!me&&rows.length?'<div style="color:#5d6f7d">حدد موقعك عشان تشوف المسافات</div>':"");
-    $("lg").innerHTML=(tot?"":'<span style="color:#5d6f7d">ما في سواقين متاحين هسه</span>')+Object.keys(COL).map(k=>`<span><i style="display:inline-block;width:12px;height:12px;border-radius:50%;background:${COL[k]};vertical-align:middle;margin-left:4px"></i>${NM[k]} (${cnt[k]||0})</span>`).join("");
-  },()=>{$("lg").textContent="تعذر تحميل السواقين"});
+  setTimeout(()=>map.invalidateSize(),150);
+}
+$("pa").onclick=async()=>{
+  const name=$("pn").value.trim();
+  if(!pt||name.length<2){alert("اضغط على الخريطة واكتب اسم المكان");return}
+  try{await addDoc(collection(db,"places"),{name,cat:$("pcat").value,lat:pt.lat,lng:pt.lng,createdAt:serverTimestamp()});$("pn").value="";$("ph").textContent="تمت الإضافة. اختار مكان تاني على الخريطة"}
+  catch(e){alert("فشلت الإضافة، حاول تاني")}
 };
-$("ovx").onclick=()=>{$("ov").classList.add("hide");if(unNear){unNear();unNear=null}};
+const IC={hood:"أحياء",food:"مطاعم وكافيهات",health:"مستشفيات وعيادات وصيدليات",market:"أسواق",other:"أماكن عامة (مدارس، بنوك، فنادق، مساجد...)"};
+let found=[];
+function catOf(t){
+  if(t.place)return"hood";
+  const a=t.amenity;
+  if(["restaurant","cafe","fast_food"].includes(a))return"food";
+  if(["hospital","clinic","doctors","pharmacy"].includes(a))return"health";
+  if(a==="marketplace"||t.shop)return"market";
+  return"other";
+}
+async function osmFetch(){
+  const B=CITY.b[0][0]+","+CITY.b[0][1]+","+CITY.b[1][0]+","+CITY.b[1][1];
+  const q=`[out:json][timeout:50];(nwr["place"~"^(suburb|neighbourhood|quarter|village|hamlet|locality)$"]["name"](${B});nwr["amenity"~"^(restaurant|cafe|fast_food|hospital|clinic|doctors|pharmacy|school|college|university|bank|marketplace|bus_station|fuel|place_of_worship)$"]["name"](${B});nwr["shop"~"^(mall|supermarket)$"]["name"](${B});nwr["tourism"~"^(hotel|guest_house)$"]["name"](${B});nwr["leisure"~"^(stadium|park)$"]["name"](${B}););out center tags;`;
+  for(const ep of ["https://overpass-api.de/api/interpreter","https://overpass.kumi.systems/api/interpreter"]){
+    try{const r=await fetch(ep,{method:"POST",body:"data="+encodeURIComponent(q)});if(!r.ok)continue;return await r.json()}catch(e){}
+  }
+  return null;
+}
+function osmItems(data,skip){
+  const seen=new Set();
+  return data.elements.map(e=>{
+    const t=e.tags||{},name=(t["name:ar"]||t.name||"").trim(),lat=e.lat??(e.center&&e.center.lat),lng=e.lon??(e.center&&e.center.lon);
+    if(!name||lat==null||lng==null)return null;
+    const id="osm_"+e.type+e.id,cat=catOf(t),key=cat+"|"+name;
+    if(skip.has(id)||seen.has(key))return null;
+    seen.add(key);return{id,name,cat,lat,lng};
+  }).filter(Boolean);
+}
+async function putAll(list){
+  for(let i=0;i<list.length;i+=400){
+    const w=writeBatch(db);
+    list.slice(i,i+400).forEach(f=>w.set(doc(db,"places",f.id),{name:f.name,cat:f.cat,lat:f.lat,lng:f.lng,source:"osm",createdAt:serverTimestamp()}));
+    await w.commit();
+  }
+}
+$("imp").onclick=async()=>{
+  $("il").innerHTML='<div class="mut">جاري الجلب من الخريطة... ممكن ياخد نص دقيقة</div>';
+  const data=await osmFetch();
+  if(!data){$("il").innerHTML='<div class="err">تعذر الجلب من الخريطة. جرّب تاني بعد شوية.</div>';return}
+  found=osmItems(data,new Set(places.map(p=>p.id)));
+  rImp();
+};
+$("rep").onclick=async()=>{
+  if(!confirm("بيمسح كل الأماكن الحالية (حتى اللي ضفتها بيدك) ويجيب بدلها أحياء ومطاعم ومستشفيات وأسواق أبو حمد من الخريطة. تكمل؟"))return;
+  $("il").innerHTML='<div class="mut">جاري الجلب من الخريطة... ممكن ياخد نص دقيقة</div>';
+  const data=await osmFetch();
+  if(!data){$("il").innerHTML='<div class="err">تعذر الجلب من الخريطة. ما مسحنا شي، جرّب تاني بعد شوية.</div>';return}
+  const list=osmItems(data,new Set()).filter(f=>f.cat!=="other");
+  if(!list.length){$("il").innerHTML='<div class="err">الخريطة ما رجّعت أماكن لأبو حمد. ما مسحنا شي. ضيف الأماكن بيدك من الخريطة تحت.</div>';return}
+  try{
+    const old=places.slice();
+    for(let i=0;i<old.length;i+=400){const w=writeBatch(db);old.slice(i,i+400).forEach(p=>w.delete(doc(db,"places",p.id)));await w.commit()}
+    await putAll(list);
+    $("il").innerHTML='<div class="mut">تم: مسحنا '+old.length+' مكان قديم وحفظنا '+list.length+' مكان من أبو حمد ✓</div>';
+  }catch(e){alert("فشلت العملية، حاول تاني")}
+};
+function rImp(){
+  const g={};found.forEach(f=>(g[f.cat]=g[f.cat]||[]).push(f));
+  $("il").innerHTML=found.length?Object.keys(IC).filter(k=>g[k]).map(k=>`<div class="card" style="box-shadow:none;background:var(--foam)"><label style="display:flex;gap:8px;align-items:center;margin:0;color:var(--ink)"><input type="checkbox" class="ic" data-k="${k}" ${k==="other"?"":"checked"} style="width:auto;margin:0"><b>${IC[k]} (${g[k].length})</b></label><div class="mut">${g[k].slice(0,6).map(x=>esc(x.name)).join("، ")}${g[k].length>6?"…":""}</div></div>`).join("")+'<button class="ok" id="isv">حفظ الأقسام المحددة</button>':'<div class="mut">ما لقينا أماكن جديدة.</div>';
+  if($("isv"))$("isv").onclick=saveImp;
+}
+async function saveImp(){
+  const keys=[...document.querySelectorAll(".ic:checked")].map(x=>x.dataset.k),list=found.filter(f=>keys.includes(f.cat));
+  if(!list.length){alert("اختار قسم واحد على الأقل");return}
+  if(!confirm("حفظ "+list.length+" مكان؟"))return;
+  try{
+    for(let i=0;i<list.length;i+=400){
+      const w=writeBatch(db);
+      list.slice(i,i+400).forEach(f=>w.set(doc(db,"places",f.id),{name:f.name,cat:f.cat,lat:f.lat,lng:f.lng,source:"osm",createdAt:serverTimestamp()}));
+      await w.commit();
+    }
+    $("il").innerHTML='<div class="mut">تم حفظ '+list.length+' مكان ✓</div>';found=[];
+  }catch(e){alert("فشل الحفظ، حاول تاني")}
+}
+$("clr").onclick=async()=>{
+  const old=places.filter(p=>p.source==="osm");
+  if(!old.length){alert("ما في أماكن مستوردة");return}
+  if(!confirm("مسح "+old.length+" مكان مستورد؟ الأماكن اللي ضفتها بيدك ما بتتمسح."))return;
+  try{for(let i=0;i<old.length;i+=400){const w=writeBatch(db);old.slice(i,i+400).forEach(p=>w.delete(doc(db,"places",p.id)));await w.commit()}}
+  catch(e){alert("فشل المسح، حاول تاني")}
+};
+$("pq").oninput=rPlc;
+const TY=[["car","صالون","Car"],["dafar","دفار","Dafar"],["box","بوكس","Box"],["rickshaw","ركشة","Rickshaw"],["bike","موتر","Bike"]];
+const DK={car:6000,rickshaw:4000,bike:2000},DS={car:100000,rickshaw:50000,bike:20000};
+let prc={},pay0={};
+function rPrice(){
+  const ae=document.activeElement;
+  if(ae&&ae.closest&&ae.closest("#prc"))return;
+  const v=x=>x==null?"":x;
+  $("prc").innerHTML=`<div class="card mut">أول كيلو بسعر ثابت، وبعدو كل كيلو بسعر الكيلو. السعر بيتقرب لأقرب 500 جنيه. التغيير بيطبق على الزبائن بعد ما يعيدوا فتح التطبيق.</div>`+TY.map(([k,n,C])=>`<div class="card"><b>${n}</b>
+    <label>الكيلو الأول (ثابت)</label><input type="number" inputmode="numeric" id="b_${k}" value="${v(prc["base"+C]??10000)}">
+    <label>سعر الكيلو بعد الأول</label><input type="number" inputmode="numeric" id="k_${k}" value="${v(prc["priceKm"+C]??DK[k])}">
+    <label>الاشتراك الشهري</label><input type="number" inputmode="numeric" id="s_${k}" value="${v(pay0["price"+C]??DS[k])}"></div>`).join("")+`<div class="card">
+    <label>أيام التجربة المجانية للسواق الجديد</label><input type="number" inputmode="numeric" id="trd" value="${v(pay0.trialDays??15)}">
+    <label>رقم حساب بنكك</label><input id="bka" value="${esc(pay0.bankAccount||"")}">
+    <label>اسم صاحب الحساب</label><input id="bkh" value="${esc(pay0.holderName||"")}">
+    <button class="go" id="psave">حفظ الأسعار</button></div>`;
+  $("psave").onclick=savePrices;
+}
+async function savePrices(){
+  const n=id=>{const t=$(id).value.trim();return t===""?null:Number(t)};
+  const pr={},py={};
+  TY.forEach(([k,,C])=>{
+    const b=n("b_"+k),kk=n("k_"+k),s=n("s_"+k);
+    if(b!=null&&b>=0)pr["base"+C]=b;
+    if(kk!=null&&kk>=0)pr["priceKm"+C]=kk;
+    if(s!=null&&s>=0)py["price"+C]=s;
+  });
+  const t=n("trd");if(t!=null&&t>=0)py.trialDays=t;
+  py.bankAccount=$("bka").value.trim();py.holderName=$("bkh").value.trim();
+  try{
+    await setDoc(doc(db,"settings","pricing"),pr,{merge:true});
+    await setDoc(doc(db,"settings","payment"),py,{merge:true});
+    alert("تم حفظ الأسعار ✓");
+  }catch(e){alert("فشل الحفظ، حاول تاني")}
+}
+let editId=null;
+function openEdit(id){
+  const d=drivers.find(x=>x.id===id);if(!d)return;
+  editId=id;
+  $("en").value=d.name||"";$("ep").value=d.phone||"";$("el").value=d.plate||"";
+  $("ev").value=d.vehicleType||"car";$("emd").value=d.carModel||"";
+  $("ex").value=d.paidUntil&&d.paidUntil.toMillis?new Date(d.paidUntil.toMillis()).toISOString().slice(0,10):"";
+  $("ea").value=d.active?"1":"0";
+  $("emw").classList.toggle("hide",$("ev").value!=="car");
+  $("em").classList.remove("hide");
+}
+$("ev").onchange=()=>$("emw").classList.toggle("hide",$("ev").value!=="car");
+$("ecn").onclick=()=>$("em").classList.add("hide");
+$("esv").onclick=async()=>{
+  const name=$("en").value.trim(),phone=$("ep").value.trim(),plate=$("el").value.trim();
+  if(name.length<2||!plate){alert("اكتب الاسم ورقم اللوحة");return}
+  const v=$("ev").value,upd={name,phone,plate,vehicleType:v,carModel:v==="car"?$("emd").value:"",active:$("ea").value==="1"};
+  if($("ex").value){const t=new Date($("ex").value+"T23:59:59");if(!isNaN(t))upd.paidUntil=Timestamp.fromMillis(t.getTime())}
+  try{await updateDoc(doc(db,"drivers",editId),upd);$("em").classList.add("hide")}
+  catch(e){alert("فشل الحفظ. تأكد إنك داخل بحساب الإدارة وإنو القواعد منشورة صاح.")}
+};
+$("q").oninput=rDrv;
 
-start();
+document.querySelectorAll(".tabs button").forEach(b=>b.onclick=()=>{
+  document.querySelectorAll(".tabs button").forEach(x=>x.classList.toggle("on",x===b));
+  ["pay","drv","rid","plc","prcw"].forEach(t=>$(t).classList.toggle("hide",t!==b.dataset.t));
+  if(b.dataset.t==="plc")initMap();
+});
+
+$("panel").onclick=async e=>{
+  const b=e.target.closest("button[data-a]");if(!b)return;
+  const a=b.dataset.a,id=b.dataset.id,p=b.dataset.p;
+  try{
+    if(a==="ok"||a==="act"){
+      if(!confirm(a==="ok"?"تأكدت إنو المبلغ وصل في بنكك؟":"تفعيل الحساب لمدة 30 يوم؟"))return;
+      const d=drivers.find(x=>x.id===id);
+      const base=Math.max(Date.now(),d&&d.active&&d.paidUntil?d.paidUntil.toMillis():0);
+      const w=writeBatch(db);
+      w.update(doc(db,"drivers",id),{active:true,trial:false,paidUntil:Timestamp.fromMillis(base+30*864e5)});
+      if(p)w.update(doc(db,"payments",p),{status:"approved",approvedAt:serverTimestamp()});
+      await w.commit();
+    }else if(a==="no"){
+      if(confirm("رفض هذه الدفعة؟"))await updateDoc(doc(db,"payments",p),{status:"rejected"});
+    }else if(a==="edit"){
+      openEdit(id);
+    }else if(a==="pedit"){
+      const p=places.find(x=>x.id===id),nn=prompt("الاسم الجديد للمكان",p?p.name:"");
+      if(nn&&nn.trim().length>=2)await updateDoc(doc(db,"places",id),{name:nn.trim()});
+    }else if(a==="rm"){
+      const d=drivers.find(x=>x.id===id);
+      if(!confirm("حذف السواق "+(d?d.name:"")+" نهائياً؟ بيتمسح ملفو ودفعاتو المعلقة، وما بترجع."))return;
+      const w=writeBatch(db);
+      w.delete(doc(db,"drivers",id));w.delete(doc(db,"driverLocations",id));
+      pays.filter(p=>p.driverId===id).forEach(p=>w.delete(doc(db,"payments",p.id)));
+      await w.commit();
+    }else if(a==="del"){
+      if(confirm("حذف المكان؟"))await deleteDoc(doc(db,"places",id));
+    }else if(a==="off"){
+      if(confirm("إيقاف حساب السواق؟"))await updateDoc(doc(db,"drivers",id),{active:false,online:false});
+    }
+  }catch(err){alert("فشل التنفيذ، حاول تاني")}
+};
 </script>
 </body>
 </html>
