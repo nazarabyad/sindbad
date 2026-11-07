@@ -4,6 +4,11 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <meta name="theme-color" content="#12263A">
+<link rel="manifest" href="manifest-driver.json">
+<link rel="apple-touch-icon" href="icon-driver-192.png">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<script>if("serviceWorker" in navigator)addEventListener("load",function(){navigator.serviceWorker.register("sw.js").catch(function(){})})</script>
 <title>سندباد - السواق</title>
 <link href="https://fonts.googleapis.com/css2?family=Tajawal:wght@400;700;800&display=swap" rel="stylesheet">
 <style>
@@ -40,7 +45,7 @@ a.btn.l{background:var(--foam);color:var(--sea)}
 </style>
 </head>
 <body>
-<header><h1>سندباد</h1><p>تطبيق السواق • أبو حمد • v22</p></header>
+<header><h1>سندباد</h1><p>تطبيق السواق • أبو حمد • v26</p></header>
 <main>
   <section id="auth" class="card hide">
     <h2 id="at">دخول السواق</h2>
@@ -89,6 +94,7 @@ a.btn.l{background:var(--foam);color:var(--sea)}
     <div class="err" id="e2"></div>
     <button class="alt" id="renew">تجديد الاشتراك</button>
     <button class="alt" id="out">تسجيل الخروج</button>
+    <div id="cx" class="card hide" style="background:#fdecea;border:2px solid #b3261e;color:#b3261e;line-height:1.9"></div>
     <div id="cur" class="card hide"></div>
     <div id="list"></div>
   </section>
@@ -105,7 +111,7 @@ a.btn.l{background:var(--foam);color:var(--sea)}
 <script type="module">
 import {initializeApp} from "https://www.gstatic.com/firebasejs/10.14.1/firebase-app.js";
 import {getAuth,createUserWithEmailAndPassword,signInWithEmailAndPassword,signOut,onAuthStateChanged} from "https://www.gstatic.com/firebasejs/10.14.1/firebase-auth.js";
-import {getFirestore,collection,doc,setDoc,addDoc,getDoc,updateDoc,Timestamp,onSnapshot,query,where,runTransaction,serverTimestamp} from "https://www.gstatic.com/firebasejs/10.14.1/firebase-firestore.js";
+import {getFirestore,collection,doc,setDoc,addDoc,getDoc,getDocs,updateDoc,Timestamp,onSnapshot,query,where,runTransaction,serverTimestamp} from "https://www.gstatic.com/firebasejs/10.14.1/firebase-firestore.js";
 
 const app=initializeApp({
   apiKey:"AIzaSyBmZP_ZaIOUiZeexQmtPlYVJENJYIk3iME",
@@ -198,7 +204,7 @@ async function logout(){
   try{if(uid){await setDoc(doc(db,"driverLocations",uid),{online:false,updatedAt:serverTimestamp()},{merge:true});await updateDoc(doc(db,"drivers",uid),{online:false})}}catch(e){}
   signOut(auth);
 }
-const fresh=r=>{const t=r.createdAt&&r.createdAt.toMillis?r.createdAt.toMillis():Date.now();return Date.now()-t<30*60*1000};
+const fresh=r=>{const t=r.createdAt&&r.createdAt.toMillis?r.createdAt.toMillis():Date.now();return Date.now()-t<30*60*1000&&!(r.rejectedBy&&r.rejectedBy.includes(uid))};
 const KMS=[[1,"1 كم"],[3,"3 كم"],[5,"5 كم"],[10,"10 كم"],[25,"25 كم"],[Infinity,"الكل"]];
 let pf={km:Infinity,sort:"near"};
 function chips(){
@@ -280,10 +286,33 @@ async function accept(id){
   $("pnd").classList.add("hide");
   }catch(e){const m=e.message==="taken"?"سواق تاني سبقك لهذا الطلب":"فشل قبول الطلب، حاول تاني";$("e2").textContent=m;if(!$("pnd").classList.contains("hide"))alert(m)}
 }
-let unAct=null;
+const SEEN="sb_seen";
+const seen=()=>{try{return JSON.parse(localStorage.getItem(SEEN)||"[]")}catch(e){return[]}};
+const mark=id=>{try{const a=seen();if(!a.includes(id)){a.push(id);localStorage.setItem(SEEN,JSON.stringify(a.slice(-30)))}}catch(e){}};
+function beep(){try{const A=new(window.AudioContext||window.webkitAudioContext)(),o=A.createOscillator(),g=A.createGain();o.connect(g);g.connect(A.destination);o.frequency.value=880;g.gain.value=.25;o.start();setTimeout(()=>{o.stop();A.close()},700)}catch(e){}}
+function alertCancel(r,id,quiet,msg){
+  const b=$("cx");
+  b.innerHTML=`<b style="font-size:18px">${msg||"الزبون ألغى المشوار"}</b><div>${esc(r.customerName)} • ${esc(r.destination)}</div><button class="alt" id="cxok">تمام</button>`;
+  b.classList.remove("hide");
+  if(!quiet){try{navigator.vibrate&&navigator.vibrate([400,200,400,200,400])}catch(e){}beep()}
+  $("cxok").onclick=()=>{b.classList.add("hide");mark(id)};
+}
+async function checkMissed(){
+  try{
+    const s=await getDocs(query(collection(db,"rides"),where("driverId","==",uid),where("status","==","cancelled")));
+    const sn=seen(),now=Date.now();
+    const l=s.docs.filter(x=>{const a=x.data().acceptedAt,t=a&&a.toMillis?a.toMillis():now;return now-t<2*3600*1000&&!sn.includes(x.id)})
+      .sort((a,b)=>((b.data().acceptedAt&&b.data().acceptedAt.toMillis?b.data().acceptedAt.toMillis():0)-(a.data().acceptedAt&&a.data().acceptedAt.toMillis?a.data().acceptedAt.toMillis():0)));
+    if(l.length)alertCancel(l[0].data(),l[0].id,true);
+  }catch(e){}
+}
+let unAct=null,known=new Set();
 function watchActive(){
   if(unAct||!uid)return;
+  known=new Set();checkMissed();
   unAct=onSnapshot(query(collection(db,"rides"),where("driverId","==",uid),where("status","==","accepted")),s=>{
+    const ids=new Set(s.docs.map(x=>x.id)),prev=known;known=ids;
+    prev.forEach(async id=>{if(ids.has(id))return;try{const g=await getDoc(doc(db,"rides",id));const x=g.exists()?g.data():null;if(x&&x.status==="cancelled")alertCancel(x,id);else if(x&&x.status==="pending"&&(x.rejectedBy||[]).includes(uid))alertCancel(x,id,false,"الزبون رفض قبولك للطلب وأعاده للسواقين")}catch(e){}});
     const c=$("cur");
     if(s.empty){c.classList.add("hide");c.innerHTML="";return}
     c.classList.remove("hide");

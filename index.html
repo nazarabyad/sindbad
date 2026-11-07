@@ -1,38 +1,18 @@
 <!doctype html>
 <html lang="ar" dir="rtl">
-<head><style>
-@font-face {
-  font-family: "Optimistic";
-  font-style: normal;
-  font-weight: 400 600;
-  font-display: swap;
-  src: url("/fonts/OptimisticAI_VF_Optimized.woff2") format("woff2");
-}
-@font-face {
-  font-family: "Optimistic Mono";
-  font-style: normal;
-  font-weight: 400;
-  font-display: swap;
-  src: url("/fonts/OptimisticMono_W_TextRegular.woff2") format("woff2");
-}
-:where(html) {
-  font-family: "Optimistic", system-ui, sans-serif;
-}
-:where(code, pre, kbd, samp) {
-  font-family: "Optimistic Mono", ui-monospace, monospace;
-}
-</style>
+<head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <meta name="theme-color" content="#12263A">
-<meta name="description" content="سندباد - تطبيق نقل في أبو حمد">
-<link rel="manifest" href="manifest.json">
-<link rel="apple-touch-icon" href="icon-192.png">
-<link rel="icon" type="image/png" sizes="192x192" href="icon-192.png">
-<link rel="icon" type="image/png" sizes="512x512" href="icon-512.png">
+<link rel="manifest" href="manifest-customer.json">
+<link rel="apple-touch-icon" href="icon-customer-192.png">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<script>if("serviceWorker" in navigator)addEventListener("load",function(){navigator.serviceWorker.register("sw.js").catch(function(){})})</script>
 <title>سندباد</title>
 <link href="https://fonts.googleapis.com/css2?family=Tajawal:wght@400;700;800&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/leaflet@1.9.4/dist/leaflet.css">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.css">
 <style>
 :root{--ink:#12263A;--sea:#0E7C86;--foam:#EAF2F3;--sun:#F2A93B;--card:#fff;--mut:#5d6f7d;--bad:#b3261e}
 *{box-sizing:border-box;margin:0}
@@ -74,7 +54,7 @@ a.call{display:block;background:var(--sea);color:#fff;text-decoration:none;borde
 </style>
 </head>
 <body>
-<header><h1>سندباد</h1><p>أبو حمد • مشوارك يصلك أقرب من ما تتخيل • v23</p></header>
+<header><h1>سندباد</h1><p>أبو حمد • مشوارك يصلك أقرب من ما تتخيل • v26</p></header>
 <main>
   <section id="login" class="card hide">
     <h2>أهلاً بيك، عرّفنا بيك</h2>
@@ -102,7 +82,7 @@ a.call{display:block;background:var(--sea);color:#fff;text-decoration:none;borde
       <div class="loc" id="loc">لسه ما حددنا موقعك</div>
       <div class="loc" id="hint">بعد تحديد موقعك ابحث عن وجهتك بالاسم أو اختار من الأقسام</div>
       <label for="dest">ابحث عن الوجهة بالاسم</label>
-      <div style="display:flex;gap:8px"><input id="dest" placeholder="مثلاً: سوق ابوحمد"><button class="alt" id="sr" style="width:auto;margin:0;padding:0 18px">بحث</button></div>
+      <div style="display:flex;gap:8px"><input id="dest" placeholder="مثلاً: سوق أمدرمان"><button class="alt" id="sr" style="width:auto;margin:0;padding:0 18px">بحث</button></div>
       <div id="res"></div>
       <div style="display:flex;gap:6px;flex-wrap:wrap;margin-top:8px"><button class="alt chip" data-c="hood">الأحياء</button><button class="alt chip" data-c="food">المطاعم</button><button class="alt chip" data-c="health">المستشفيات</button><button class="alt chip" data-c="market">الأسواق</button><button class="alt chip" data-c="other">أماكن تانية</button></div>
       <div class="price" id="price"></div>
@@ -116,6 +96,7 @@ a.call{display:block;background:var(--sea);color:#fff;text-decoration:none;borde
     <div class="big" id="sm"></div>
     <div id="sd" style="color:var(--mut)"></div>
     <div id="call"></div>
+    <button class="alt hide" id="rej">رفض السواق وإعادة الطلب</button>
     <button class="alt" id="cancel">إلغاء الطلب</button>
     <button class="alt hide" id="again">طلب جديد</button>
   </section>
@@ -132,7 +113,7 @@ a.call{display:block;background:var(--sea);color:#fff;text-decoration:none;borde
 <script type="module">
 import {initializeApp} from "https://www.gstatic.com/firebasejs/10.14.1/firebase-app.js";
 import {getAuth,signInAnonymously} from "https://www.gstatic.com/firebasejs/10.14.1/firebase-auth.js";
-import {getFirestore,collection,addDoc,getDoc,getDocs,query,where,doc,updateDoc,onSnapshot,serverTimestamp} from "https://www.gstatic.com/firebasejs/10.14.1/firebase-firestore.js";
+import {getFirestore,collection,addDoc,getDoc,getDocs,query,where,arrayUnion,deleteField,doc,updateDoc,onSnapshot,serverTimestamp} from "https://www.gstatic.com/firebasejs/10.14.1/firebase-firestore.js";
 
 const app=initializeApp({
   apiKey:"AIzaSyBmZP_ZaIOUiZeexQmtPlYVJENJYIk3iME",
@@ -189,7 +170,7 @@ $("send").onclick=async()=>{
 };
 
 function watch(id){
-  show("status");$("again").classList.add("hide");$("cancel").classList.remove("hide");
+  show("status");$("again").classList.add("hide");$("rej").classList.add("hide");$("cancel").classList.remove("hide");
   if(unsub)unsub();
   unsub=onSnapshot(doc(db,"rides",id),s=>{
     if(!s.exists()){reset();return}
@@ -200,9 +181,18 @@ function watch(id){
     $("pl").classList.toggle("hide",d.status!=="pending");
     $("call").innerHTML=d.status==="accepted"&&d.driverPhone?`<a class="call" href="tel:${encodeURIComponent(d.driverPhone)}">اتصل بالسواق</a>`:"";
     const end=d.status==="cancelled"||d.status==="done";
-    $("cancel").classList.toggle("hide",end);$("again").classList.toggle("hide",!end);
+    $("cancel").classList.toggle("hide",end);$("rej").classList.toggle("hide",d.status!=="accepted");$("again").classList.toggle("hide",!end);
   },()=>reset());
 }
+$("rej").onclick=async()=>{
+  const r=ls.get("sb_ride");if(!r)return;
+  if(!confirm("ترفض السواق ده ويرجع طلبك للسواقين التانيين؟"))return;
+  try{
+    const g=await getDoc(doc(db,"rides",r)),x=g.data();
+    if(!x||x.status!=="accepted"||!x.driverId)return;
+    await updateDoc(doc(db,"rides",r),{status:"pending",createdAt:serverTimestamp(),rejectedBy:arrayUnion(x.driverId),driverId:deleteField(),driverName:deleteField(),driverPhone:deleteField(),driverVehicle:deleteField(),driverPlate:deleteField(),acceptedAt:deleteField()});
+  }catch(e){alert("ما قدرنا نرفض السواق ("+(e.code||e.message)+")")}
+};
 $("cancel").onclick=()=>{const r=ls.get("sb_ride");if(r)updateDoc(doc(db,"rides",r),{status:"cancelled"})};
 $("again").onclick=reset;
 function reset(){if(unsub)unsub();ls.del("sb_ride");pos=null;destPt=null;quote=null;if(mk&&map){map.removeLayer(mk);mk=null}$("price").textContent="";$("res").innerHTML="";$("send").disabled=true;$("dest").value="";$("loc").className="loc";$("loc").textContent="لسه ما حددنا موقعك";show("order")}
@@ -307,15 +297,6 @@ $("nearby").onclick=()=>{
 $("ovx").onclick=()=>{$("ov").classList.add("hide");if(unNear){unNear();unNear=null}};
 
 start();
-
-// PWA Registration
-if ('serviceWorker' in navigator) {
-  window.addEventListener('load', () => {
-    navigator.serviceWorker.register('sw.js')
-      .then(reg => console.log('SW registered'))
-      .catch(err => console.log('SW failed', err));
-  });
-}
 </script>
-<script>(function(){var loc=location.href.replace(/#.*$/,"");var ATTR_NAMES=["data-product-id","data-productid","data-product_id","product-id","productid","product_id","data-source-entity-id","source-entity-id","source_entity_id","data-product","data-metadata","data-meta"];var DATASET_KEYS=["productId","productid","product_id","sourceEntityId","sourceentityid","source_entity_id","product","metadata","meta"];function readProductId(value){if(typeof value!=="string"||value.length===0)return null;if(/^[0-9]{6,}$/.test(value))return value;var match=value.match(/(?:product(?:_|-)?id|source(?:_|-)?entity(?:_|-)?id)["'=:\s]+([0-9]{6,})/i);return match?match[1]:null}function extractProductId(start){for(var node=start;node&&node!==document.body;node=node.parentElement){for(var i=0;i<ATTR_NAMES.length;i++){var attrValue=node.getAttribute&&node.getAttribute(ATTR_NAMES[i]);var attrProductId=readProductId(attrValue);if(attrProductId)return attrProductId}var dataset=node.dataset||null;if(dataset){for(var j=0;j<DATASET_KEYS.length;j++){var dataValue=dataset[DATASET_KEYS[j]];var dataProductId=readProductId(dataValue);if(dataProductId)return dataProductId}}}return null}function isInlineMediaSlotElement(node){return !!(node&&node.getAttribute&&node.getAttribute("data-clippy-inline-media-slot")!==null)}function findInlineMediaSlot(start){for(var node=start;node&&node!==document.body;node=node.parentElement){if(isInlineMediaSlotElement(node))return node}return null}function readInlineMediaUrl(node){if(!node)return null;return node.getAttribute&&((node.getAttribute("data-clippy-inline-media-url")||node.getAttribute("data-url")||node.getAttribute("data_url")))||node.href||null}function stripHash(url){return String(url).replace(/#.*$/,"")}function urlsMatch(a,b){if(!a||!b)return false;try{return stripHash(new URL(a,loc).href)===stripHash(new URL(b,loc).href)}catch(_){return stripHash(a)===stripHash(b)}}function isFirstPartyReelUrl(value){try{var url=new URL(value,loc);if(url.protocol!=="https:")return false;var host=url.hostname.toLowerCase();var supported=host==="instagram.com"||host.endsWith(".instagram.com")||host==="facebook.com"||host.endsWith(".facebook.com");return supported&&/\/reels?\//i.test(url.pathname)}catch(_){return false}}function isInlineMediaUrlClick(node,href){var slot=findInlineMediaSlot(node);if(!slot)return false;var slotUrl=readInlineMediaUrl(slot);if(slotUrl)return urlsMatch(href,slotUrl);return isFirstPartyReelUrl(href)}function findDataHref(start){for(var node=start;node&&node!==document.body;node=node.parentElement){if(node.getAttribute){var href=node.getAttribute("data-href")||node.getAttribute("data-url");if(href)return{href:href,node:node}}}return null}var nativeOpen=window.open;window.open=function(url){if(parent!==window&&typeof url==="string"&&/^https?:\/\//.test(url)){parent.postMessage({type:"ecto:usercontent-link-click",href:url},"*");return null}return nativeOpen?nativeOpen.apply(window,arguments):null};document.addEventListener("click",function(e){var target=e.target instanceof Element?e.target:null;if(!target)return;if(parent===window)return;var a=target.closest?target.closest("a[href]"):null;if(a&&a.href&&/^https?:\/\//.test(a.href)&&a.href.replace(/#.*$/,"")!==loc){if(isInlineMediaUrlClick(a,a.href))return;var productId=extractProductId(target)||extractProductId(a);if(productId){e.preventDefault();parent.postMessage({type:"ecto-artifact-link-click",productId:productId},"*");return}e.preventDefault();parent.postMessage({type:"ecto:usercontent-link-click",href:a.href},"*");return}var dataHref=findDataHref(target);if(dataHref&&/^https?:\/\//.test(dataHref.href)&&dataHref.href.replace(/#.*$/,"")!==loc){if(isInlineMediaUrlClick(dataHref.node,dataHref.href))return;e.preventDefault();parent.postMessage({type:"ecto:usercontent-link-click",href:dataHref.href},"*")}},true)})();</script><script>(function(){var FOCUS_TYPE="ecto:artifact-focus-request";var CLOSE_TYPE="ecto:artifact-close-request";function focusArtifactDocument(){var body=document.body;if(!body)return;try{window.focus();}catch(e){}if(!body.hasAttribute("tabindex"))body.setAttribute("tabindex","-1");try{body.focus({preventScroll:true});}catch(e){try{body.focus();}catch(e2){}}}window.addEventListener("message",function(event){if(event.source!==window.parent)return;var data=event.data;if(!data||typeof data!=="object"||data.type!==FOCUS_TYPE)return;if(document.readyState==="loading"){document.addEventListener("DOMContentLoaded",focusArtifactDocument,{once:true});return;}focusArtifactDocument();});window.addEventListener("keydown",function(event){if(event.key!=="Escape")return;window.setTimeout(function(){if(event.defaultPrevented)return;window.parent.postMessage({type:CLOSE_TYPE},"*");},0);});})();</script></body>
+</body>
 </html>
