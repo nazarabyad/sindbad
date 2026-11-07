@@ -4,6 +4,11 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <meta name="theme-color" content="#12263A">
+<link rel="manifest" href="manifest-admin.json">
+<link rel="apple-touch-icon" href="icon-admin-192.png">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<script>if("serviceWorker" in navigator)addEventListener("load",function(){navigator.serviceWorker.register("sw.js").catch(function(){})})</script>
 <meta name="robots" content="noindex">
 <title>سندباد - الإدارة</title>
 <link href="https://fonts.googleapis.com/css2?family=Tajawal:wght@400;700;800&display=swap" rel="stylesheet">
@@ -33,12 +38,17 @@ button{font:inherit;cursor:pointer;border:0;border-radius:12px;padding:12px;widt
 .tag.g{background:#d3efe3;color:#0c5a3a}.tag.r{background:#f6d6d3;color:var(--bad)}
 .err{color:var(--bad);font-size:14px;margin-top:6px}
 .hide{display:none}
+.alt{background:var(--foam);color:var(--sea)}
+#em{position:fixed;inset:0;background:#0008;z-index:50;display:flex;align-items:flex-end}
+#em.hide{display:none}
+.sheet{background:#fff;border-radius:20px 20px 0 0;padding:16px;width:100%;max-height:92vh;overflow:auto}
+select{margin-bottom:10px}
 select{width:100%;padding:12px;border:1.5px solid #cfdbe0;border-radius:12px;font:inherit;background:#fff;margin-bottom:10px}
 #map{z-index:0}
 </style>
 </head>
 <body>
-<header><div><h1>سندباد</h1><p>لوحة الإدارة • أبو حمد • v19</p></div><button id="out" class="hide">خروج</button></header>
+<header><div><h1>سندباد</h1><p>لوحة الإدارة • أبو حمد • v27</p></div><button id="out" class="hide">خروج</button></header>
 <main>
   <section id="login" class="card hide">
     <label for="em">الإيميل</label><input id="em" type="email" autocomplete="username">
@@ -77,6 +87,19 @@ select{width:100%;padding:12px;border:1.5px solid #cfdbe0;border-radius:12px;fon
   </section>
 </main>
 
+<div id="em" class="hide"><div class="sheet">
+  <b style="font-size:18px">تعديل بيانات السواق</b>
+  <label for="en">الاسم</label><input id="en">
+  <label for="ep">رقم الهاتف (للاتصال فقط، دخولو بيفضل بالرقم القديم)</label><input id="ep" type="tel" inputmode="tel">
+  <label for="el">رقم اللوحة</label><input id="el">
+  <label for="ev">نوع المركبة</label>
+  <select id="ev"><option value="car">صالون</option><option value="dafar">دفار</option><option value="box">بوكس</option><option value="rickshaw">ركشة</option><option value="bike">موتر</option></select>
+  <div id="emw"><label for="emd">نوع الصالون</label><select id="emd"><option value="">—</option><option>كلك</option><option>فيرنا</option><option>أتس</option><option>أخرى</option></select></div>
+  <label for="ex">تاريخ انتهاء الاشتراك</label><input id="ex" type="date">
+  <label for="ea">حالة الحساب</label><select id="ea"><option value="1">مفعّل</option><option value="0">غير مفعّل</option></select>
+  <button class="ok" id="esv">حفظ التعديل</button>
+  <button class="alt" id="ecn">إلغاء</button>
+</div></div>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.js"></script>
 <script type="module">
 import {initializeApp} from "https://www.gstatic.com/firebasejs/10.14.1/firebase-app.js";
@@ -142,11 +165,16 @@ function rDrv(){
   const l=drivers.filter(d=>!q||(d.name||"").includes(q)||(d.phone||"").includes(q));
   $("dl").innerHTML=l.map(d=>{
     const exp=d.paidUntil&&d.paidUntil.toMillis()<Date.now(),st=!d.active?"غير مفعّل":exp?"منتهي":"مفعّل";
+    const cms=x=>x&&x.createdAt&&x.createdAt.toMillis?x.createdAt.toMillis():0;
+    const olds=drivers.filter(x=>x.id!==d.id&&x.phone&&x.phone===d.phone&&cms(x)<cms(d)).sort((p,q)=>cms(q)-cms(p));
+    const mg=olds.length?`<div class="mut" style="color:#b3261e">⚠ نفس الرقم مسجل قبل كده. لو دي استعادة حساب، انقل الاشتراك:</div><button class="alt" data-a="merge" data-id="${d.id}" data-old="${olds[0].id}">استعادة الحساب: نقل الاشتراك من القديم</button>`:"";
     return `<div class="card"><div class="sw"><b>${esc(d.name)}</b><span class="tag ${st==="مفعّل"?"g":"r"}">${st==="مفعّل"&&d.trial?"تجربة مجانية":st}</span></div>
     <div class="mut"><span dir="ltr">${esc(d.phone)}</span> • ${VN[d.vehicleType]||""}${d.carModel?" "+esc(d.carModel):""} • لوحة ${esc(d.plate)}</div>
     <div class="mut">ينتهي: ${fd(d.paidUntil)}${d.online?" • متاح الآن":""}</div>
     <button class="ok" data-a="act" data-id="${d.id}">تفعيل / تجديد 30 يوم</button>
     ${d.active?`<button class="no" data-a="off" data-id="${d.id}">إيقاف الحساب</button>`:""}
+    ${mg}
+    <button class="alt" data-a="edit" data-id="${d.id}">تعديل البيانات</button>
     <button class="no" data-a="rm" data-id="${d.id}">حذف السواق نهائياً</button></div>`}).join("")||'<div class="card mut">ما في سواقين</div>';
 }
 function rRid(){
@@ -159,7 +187,8 @@ const CAT={hood:"حي",food:"مطعم",health:"صحة",market:"سوق",other:"م
 function rPlc(){
   const q=$("pq").value.trim();
   const all=places.filter(p=>!q||String(p.name).includes(q)).sort((a,b)=>String(a.name).localeCompare(String(b.name),"ar")),l=all.slice(0,60);
-  $("pl").innerHTML=(all.length>60?`<div class="card mut">عرض أول 60 من ${all.length}. استخدم البحث.</div>`:"")+l.map(p=>`<div class="card"><div class="sw"><b>${esc(p.name)}</b><span class="tag">${CAT[p.cat]||""}</span></div><button class="no" data-a="del" data-id="${p.id}">حذف</button></div>`).join("")||'<div class="card mut">ما في أماكن مضافة لسه</div>';
+  $("pl").innerHTML=(all.length>60?`<div class="card mut">عرض أول 60 من ${all.length}. استخدم البحث.</div>`:"")+l.map(p=>`<div class="card"><div class="sw"><b>${esc(p.name)}</b><span class="tag">${CAT[p.cat]||""}</span></div><button class="alt" data-a="pedit" data-id="${p.id}">تعديل الاسم</button>
+    <button class="no" data-a="del" data-id="${p.id}">حذف</button></div>`).join("")||'<div class="card mut">ما في أماكن مضافة لسه</div>';
 }
 function initMap(){
   if(!window.L)return;
@@ -272,6 +301,7 @@ function rPrice(){
     <label>أيام التجربة المجانية للسواق الجديد</label><input type="number" inputmode="numeric" id="trd" value="${v(pay0.trialDays??15)}">
     <label>رقم حساب بنكك</label><input id="bka" value="${esc(pay0.bankAccount||"")}">
     <label>اسم صاحب الحساب</label><input id="bkh" value="${esc(pay0.holderName||"")}">
+    <label>رقم واتساب الدعم (صيغة دولية، مثل 249912345678)</label><input id="sup" inputmode="numeric" value="${esc(pay0.supportPhone||"")}">
     <button class="go" id="psave">حفظ الأسعار</button></div>`;
   $("psave").onclick=savePrices;
 }
@@ -285,13 +315,34 @@ async function savePrices(){
     if(s!=null&&s>=0)py["price"+C]=s;
   });
   const t=n("trd");if(t!=null&&t>=0)py.trialDays=t;
-  py.bankAccount=$("bka").value.trim();py.holderName=$("bkh").value.trim();
+  py.bankAccount=$("bka").value.trim();py.holderName=$("bkh").value.trim();py.supportPhone=$("sup").value.trim();
   try{
     await setDoc(doc(db,"settings","pricing"),pr,{merge:true});
     await setDoc(doc(db,"settings","payment"),py,{merge:true});
     alert("تم حفظ الأسعار ✓");
   }catch(e){alert("فشل الحفظ، حاول تاني")}
 }
+let editId=null;
+function openEdit(id){
+  const d=drivers.find(x=>x.id===id);if(!d)return;
+  editId=id;
+  $("en").value=d.name||"";$("ep").value=d.phone||"";$("el").value=d.plate||"";
+  $("ev").value=d.vehicleType||"car";$("emd").value=d.carModel||"";
+  $("ex").value=d.paidUntil&&d.paidUntil.toMillis?new Date(d.paidUntil.toMillis()).toISOString().slice(0,10):"";
+  $("ea").value=d.active?"1":"0";
+  $("emw").classList.toggle("hide",$("ev").value!=="car");
+  $("em").classList.remove("hide");
+}
+$("ev").onchange=()=>$("emw").classList.toggle("hide",$("ev").value!=="car");
+$("ecn").onclick=()=>$("em").classList.add("hide");
+$("esv").onclick=async()=>{
+  const name=$("en").value.trim(),phone=$("ep").value.trim(),plate=$("el").value.trim();
+  if(name.length<2||!plate){alert("اكتب الاسم ورقم اللوحة");return}
+  const v=$("ev").value,upd={name,phone,plate,vehicleType:v,carModel:v==="car"?$("emd").value:"",active:$("ea").value==="1"};
+  if($("ex").value){const t=new Date($("ex").value+"T23:59:59");if(!isNaN(t))upd.paidUntil=Timestamp.fromMillis(t.getTime())}
+  try{await updateDoc(doc(db,"drivers",editId),upd);$("em").classList.add("hide")}
+  catch(e){alert("فشل الحفظ. تأكد إنك داخل بحساب الإدارة وإنو القواعد منشورة صاح.")}
+};
 $("q").oninput=rDrv;
 
 document.querySelectorAll(".tabs button").forEach(b=>b.onclick=()=>{
@@ -314,6 +365,21 @@ $("panel").onclick=async e=>{
       await w.commit();
     }else if(a==="no"){
       if(confirm("رفض هذه الدفعة؟"))await updateDoc(doc(db,"payments",p),{status:"rejected"});
+    }else if(a==="merge"){
+      const nw=drivers.find(x=>x.id===id),old=drivers.find(x=>x.id===b.dataset.old);
+      if(!nw||!old)return;
+      if(!confirm("نقل اشتراك "+old.name+" للحساب الجديد وحذف القديم؟"))return;
+      const w=writeBatch(db),upd={active:!!old.active,trial:!!old.trial};
+      if(old.paidUntil)upd.paidUntil=old.paidUntil;
+      w.update(doc(db,"drivers",id),upd);
+      pays.filter(p=>p.driverId===old.id).forEach(p=>w.update(doc(db,"payments",p.id),{driverId:id}));
+      w.delete(doc(db,"drivers",old.id));w.delete(doc(db,"driverLocations",old.id));
+      await w.commit();
+    }else if(a==="edit"){
+      openEdit(id);
+    }else if(a==="pedit"){
+      const p=places.find(x=>x.id===id),nn=prompt("الاسم الجديد للمكان",p?p.name:"");
+      if(nn&&nn.trim().length>=2)await updateDoc(doc(db,"places",id),{name:nn.trim()});
     }else if(a==="rm"){
       const d=drivers.find(x=>x.id===id);
       if(!confirm("حذف السواق "+(d?d.name:"")+" نهائياً؟ بيتمسح ملفو ودفعاتو المعلقة، وما بترجع."))return;

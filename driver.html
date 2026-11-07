@@ -45,7 +45,7 @@ a.btn.l{background:var(--foam);color:var(--sea)}
 </style>
 </head>
 <body>
-<header><h1>سندباد</h1><p>تطبيق السواق • أبو حمد • v26</p></header>
+<header><h1>سندباد</h1><p>تطبيق السواق • أبو حمد • v27</p></header>
 <main>
   <section id="auth" class="card hide">
     <h2 id="at">دخول السواق</h2>
@@ -60,6 +60,8 @@ a.btn.l{background:var(--foam);color:var(--sea)}
     <label for="aw">كلمة السر (6 أحرف أو أرقام على الأقل)</label><input id="aw" type="password" autocomplete="current-password">
     <button class="go" id="ab">دخول</button>
     <button class="alt" id="am">ما عندي حساب، سجّل جديد</button>
+    <button class="alt" id="fg">نسيت كلمة السر؟</button>
+    <div id="fgb" class="hide" style="margin-top:10px"><p class="mut">ابعت رسالة للإدارة برقمك. بعد ما يتأكدوا إنك صاحب الحساب بيطلبوا منك تسجّل من جديد بنفس الرقم وكلمة سر جديدة، واشتراكك بيتنقل ليك.</p><a class="btn" id="fgwa" target="_blank" rel="noopener">راسل الإدارة على واتساب</a></div>
     <div class="err" id="e0"></div>
   </section>
 
@@ -110,7 +112,7 @@ a.btn.l{background:var(--foam);color:var(--sea)}
 </div>
 <script type="module">
 import {initializeApp} from "https://www.gstatic.com/firebasejs/10.14.1/firebase-app.js";
-import {getAuth,createUserWithEmailAndPassword,signInWithEmailAndPassword,signOut,onAuthStateChanged} from "https://www.gstatic.com/firebasejs/10.14.1/firebase-auth.js";
+import {getAuth,createUserWithEmailAndPassword,signInWithEmailAndPassword,signInAnonymously,signOut,onAuthStateChanged} from "https://www.gstatic.com/firebasejs/10.14.1/firebase-auth.js";
 import {getFirestore,collection,doc,setDoc,addDoc,getDoc,getDocs,updateDoc,Timestamp,onSnapshot,query,where,runTransaction,serverTimestamp} from "https://www.gstatic.com/firebasejs/10.14.1/firebase-firestore.js";
 
 const app=initializeApp({
@@ -204,7 +206,7 @@ async function logout(){
   try{if(uid){await setDoc(doc(db,"driverLocations",uid),{online:false,updatedAt:serverTimestamp()},{merge:true});await updateDoc(doc(db,"drivers",uid),{online:false})}}catch(e){}
   signOut(auth);
 }
-const fresh=r=>{const t=r.createdAt&&r.createdAt.toMillis?r.createdAt.toMillis():Date.now();return Date.now()-t<30*60*1000&&!(r.rejectedBy&&r.rejectedBy.includes(uid))};
+const fresh=r=>{const q=r.requeuedAt||r.createdAt,t=q&&q.toMillis?q.toMillis():Date.now();return Date.now()-t<30*60*1000&&!(r.rejectedDrivers||[]).includes(uid)};
 const KMS=[[1,"1 كم"],[3,"3 كم"],[5,"5 كم"],[10,"10 كم"],[25,"25 كم"],[Infinity,"الكل"]];
 let pf={km:Infinity,sort:"near"};
 function chips(){
@@ -223,6 +225,19 @@ function renderPnd(){
 }
 $("allp").onclick=()=>{chips();$("pnd").classList.remove("hide");renderPnd()};
 $("pcl").onclick=()=>$("pnd").classList.add("hide");
+$("fg").onclick=async()=>{
+  const bx=$("fgb");bx.classList.toggle("hide");
+  if(bx.classList.contains("hide"))return;
+  try{
+    if(!auth.currentUser)await signInAnonymously(auth);
+    const s=await getDoc(doc(db,"settings","payment"));
+    let p=String((s.exists()&&s.data().supportPhone)||"").replace(/\D/g,"");
+    if(p.startsWith("0"))p="249"+p.slice(1);
+    const mine=norm($("ap").value),msg="نسيت كلمة السر لحساب السواق."+(mine?" رقمي: "+mine:"");
+    if(p)$("fgwa").href="https://wa.me/"+p+"?text="+encodeURIComponent(msg);
+    else{$("fgwa").removeAttribute("href");$("fgwa").textContent="رقم الإدارة غير مضبوط، اتصل بالإدارة مباشرة"}
+  }catch(e){}
+};
 $("renew").onclick=()=>{renewing=true;showPay(false,true)};
 $("back").onclick=()=>{renewing=false;show("home")};
 $("out").onclick=logout;$("out2").onclick=logout;
@@ -290,9 +305,9 @@ const SEEN="sb_seen";
 const seen=()=>{try{return JSON.parse(localStorage.getItem(SEEN)||"[]")}catch(e){return[]}};
 const mark=id=>{try{const a=seen();if(!a.includes(id)){a.push(id);localStorage.setItem(SEEN,JSON.stringify(a.slice(-30)))}}catch(e){}};
 function beep(){try{const A=new(window.AudioContext||window.webkitAudioContext)(),o=A.createOscillator(),g=A.createGain();o.connect(g);g.connect(A.destination);o.frequency.value=880;g.gain.value=.25;o.start();setTimeout(()=>{o.stop();A.close()},700)}catch(e){}}
-function alertCancel(r,id,quiet,msg){
+function alertCancel(r,id,quiet,title){
   const b=$("cx");
-  b.innerHTML=`<b style="font-size:18px">${msg||"الزبون ألغى المشوار"}</b><div>${esc(r.customerName)} • ${esc(r.destination)}</div><button class="alt" id="cxok">تمام</button>`;
+  b.innerHTML=`<b style="font-size:18px">${esc(title||"الزبون ألغى المشوار")}</b><div>${esc(r.customerName)} • ${esc(r.destination)}</div><button class="alt" id="cxok">تمام</button>`;
   b.classList.remove("hide");
   if(!quiet){try{navigator.vibrate&&navigator.vibrate([400,200,400,200,400])}catch(e){}beep()}
   $("cxok").onclick=()=>{b.classList.add("hide");mark(id)};
@@ -312,7 +327,7 @@ function watchActive(){
   known=new Set();checkMissed();
   unAct=onSnapshot(query(collection(db,"rides"),where("driverId","==",uid),where("status","==","accepted")),s=>{
     const ids=new Set(s.docs.map(x=>x.id)),prev=known;known=ids;
-    prev.forEach(async id=>{if(ids.has(id))return;try{const g=await getDoc(doc(db,"rides",id));const x=g.exists()?g.data():null;if(x&&x.status==="cancelled")alertCancel(x,id);else if(x&&x.status==="pending"&&(x.rejectedBy||[]).includes(uid))alertCancel(x,id,false,"الزبون رفض قبولك للطلب وأعاده للسواقين")}catch(e){}});
+    prev.forEach(async id=>{if(ids.has(id))return;try{const g=await getDoc(doc(db,"rides",id));if(!g.exists())return;const v=g.data();if(v.status==="cancelled")alertCancel(v,id);else if(v.status==="pending"&&(v.rejectedDrivers||[]).includes(uid))alertCancel(v,id,false,"الزبون رفض قبولك وطلب سواق آخر")}catch(e){}});
     const c=$("cur");
     if(s.empty){c.classList.add("hide");c.innerHTML="";return}
     c.classList.remove("hide");
